@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent SSH WebSocket测试</title>
+    <style>
+        body {
+            font-family: 'Consolas', 'Monaco', monospace;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: 80vh;
+        }
+        .panel {
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #252526;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #cccccc;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #005a9e;
+        }
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        .terminal {
+            background-color: #0c0c0c;
+            color: #00ff00;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .command-input {
+            width: 100%;
+            background-color: #0c0c0c;
+            color: #00ff00;
+            border: 1px solid #555;
+            padding: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        .status {
+            padding: 8px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.connected {
+            background-color: #155724;
+            color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .status.disconnected {
+            background-color: #721c24;
+            color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        .status.connecting {
+            background-color: #856404;
+            color: #fff3cd;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔌 Agent SSH WebSocket隧道测试</h1>
+    
+    <div class="container">
+        <!-- 连接配置面板 -->
+        <div class="panel">
+            <h3>SSH连接配置</h3>
+            
+            <div class="form-group">
+                <label>SSH服务器地址:</label>
+                <input type="text" id="sshHost" value="192.168.26.130" placeholder="192.168.1.100">
+            </div>
+            
+            <div class="form-group">
+                <label>SSH端口:</label>
+                <input type="number" id="sshPort" value="22" placeholder="22">
+            </div>
+            
+            <div class="form-group">
+                <label>用户名:</label>
+                <input type="text" id="username" value="root" placeholder="username">
+            </div>
+            
+            <div class="form-group">
+                <label>认证方式:</label>
+                <select id="authType">
+                    <option value="password">密码认证</option>
+                    <option value="publickey">公钥认证</option>
+                    <option value="keyboard-interactive">键盘交互认证</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="passwordGroup">
+                <label>密码:</label>
+                <input type="password" id="password" value="123456" placeholder="password">
+            </div>
+            
+            <div class="form-group" id="keyGroup" style="display: none;">
+                <label>私钥:</label>
+                <textarea id="privateKey" rows="5" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>终端大小:</label>
+                <input type="number" id="cols" value="80" placeholder="列数" style="width: 48%; display: inline-block;">
+                <input type="number" id="rows" value="24" placeholder="行数" style="width: 48%; display: inline-block; margin-left: 4%;">
+            </div>
+            
+            <div class="form-group">
+                <button id="connectBtn" onclick="connectSSH()">连接SSH</button>
+                <button id="disconnectBtn" onclick="disconnectSSH()" disabled>断开连接</button>
+            </div>
+            
+            <div id="connectionStatus" class="status disconnected">未连接</div>
+            
+            <div class="form-group">
+                <h4>快速命令:</h4>
+                <button onclick="sendCommand('ls -la')">ls -la</button>
+                <button onclick="sendCommand('pwd')">pwd</button>
+                <button onclick="sendCommand('uname -a')">uname -a</button>
+                <button onclick="sendCommand('ps aux')">ps aux</button>
+            </div>
+        </div>
+        
+        <!-- 终端面板 -->
+        <div class="panel">
+            <h3>SSH终端</h3>
+            <div id="terminal" class="terminal">等待连接...\n</div>
+            
+            <div class="form-group">
+                <input type="text" id="commandInput" class="command-input" 
+                       placeholder="输入SSH命令，按Enter发送" 
+                       onkeypress="handleCommand(event)"
+                       disabled>
+            </div>
+            
+            <div class="form-group">
+                <button onclick="clearTerminal()">清空终端</button>
+                <button onclick="resizeTerminal()">调整终端大小</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let connectionId = null;
+        let sessionId = 'session-' + Date.now();
+
+        // 认证方式切换
+        document.getElementById('authType').addEventListener('change', function() {
+            const authType = this.value;
+            const passwordGroup = document.getElementById('passwordGroup');
+            const keyGroup = document.getElementById('keyGroup');
+            
+            if (authType === 'publickey') {
+                passwordGroup.style.display = 'none';
+                keyGroup.style.display = 'block';
+            } else {
+                passwordGroup.style.display = 'block';
+                keyGroup.style.display = 'none';
+            }
+        });
+
+        function updateStatus(message, type) {
+            const status = document.getElementById('connectionStatus');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function appendToTerminal(text) {
+            const terminal = document.getElementById('terminal');
+            terminal.textContent += text;
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function clearTerminal() {
+            document.getElementById('terminal').textContent = '';
+        }
+
+        function connectSSH() {
+            const host = document.getElementById('sshHost').value;
+            const port = parseInt(document.getElementById('sshPort').value);
+            const username = document.getElementById('username').value;
+            const authType = document.getElementById('authType').value;
+            const password = document.getElementById('password').value;
+            const privateKey = document.getElementById('privateKey').value;
+            const cols = parseInt(document.getElementById('cols').value);
+            const rows = parseInt(document.getElementById('rows').value);
+
+            if (!host || !username) {
+                alert('请填写SSH服务器地址和用户名');
+                return;
+            }
+
+            updateStatus('正在连接...', 'connecting');
+            appendToTerminal('正在建立WebSocket连接...\n');
+
+            // 建立WebSocket连接
+            ws = new WebSocket('ws://localhost:8889/ws/ssh');
+
+            ws.onopen = function() {
+                appendToTerminal('WebSocket连接已建立\n');
+                appendToTerminal('正在建立SSH连接...\n');
+
+                // 发送SSH连接请求
+                const sshRequest = {
+                    target: host,
+                    port: port,
+                    username: username,
+                    auth_type: authType,
+                    cols: cols,
+                    rows: rows,
+                    session_id: sessionId
+                };
+
+                if (authType === 'publickey') {
+                    sshRequest.private_key = privateKey;
+                } else {
+                    sshRequest.password = password;
+                }
+
+                ws.send(JSON.stringify(sshRequest));
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    // 尝试解析JSON响应
+                    const response = JSON.parse(event.data);
+                    
+                    if (response.success) {
+                        connectionId = response.connection_id;
+                        updateStatus(`已连接到 ${host}:${port}`, 'connected');
+                        appendToTerminal(`SSH连接成功！连接ID: ${connectionId}\n`);
+                        appendToTerminal('现在您可以输入SSH命令了\n\n');
+                        
+                        document.getElementById('connectBtn').disabled = true;
+                        document.getElementById('disconnectBtn').disabled = false;
+                        document.getElementById('commandInput').disabled = false;
+                        document.getElementById('commandInput').focus();
+                    } else {
+                        updateStatus('连接失败', 'disconnected');
+                        appendToTerminal(`连接失败: ${response.message}\n`);
+                    }
+                } catch (e) {
+                    // 如果不是JSON，就是SSH输出数据
+                    appendToTerminal(event.data);
+                }
+            };
+
+            ws.onerror = function(error) {
+                updateStatus('连接错误', 'disconnected');
+                appendToTerminal(`WebSocket错误: ${error}\n`);
+            };
+
+            ws.onclose = function() {
+                updateStatus('连接已断开', 'disconnected');
+                appendToTerminal('\n连接已断开\n');
+                
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+                document.getElementById('commandInput').disabled = true;
+                
+                ws = null;
+                connectionId = null;
+            };
+        }
+
+        function disconnectSSH() {
+            if (ws) {
+                ws.close();
+            }
+        }
+
+        function sendCommand(command) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(command + '\n');
+                appendToTerminal(`$ ${command}\n`);
+            } else {
+                alert('请先建立SSH连接');
+            }
+        }
+
+        function handleCommand(event) {
+            if (event.key === 'Enter') {
+                const input = document.getElementById('commandInput');
+                const command = input.value;
+                
+                if (command.trim()) {
+                    sendCommand(command);
+                    input.value = '';
+                }
+            }
+        }
+
+        function resizeTerminal() {
+            if (!connectionId) {
+                alert('请先建立SSH连接');
+                return;
+            }
+
+            const cols = document.getElementById('cols').value;
+            const rows = document.getElementById('rows').value;
+
+            fetch(`http://localhost:8889/api/ssh/resize?connection_id=${connectionId}&cols=${cols}&rows=${rows}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    appendToTerminal(`终端大小已调整为 ${cols}x${rows}\n`);
+                } else {
+                    appendToTerminal(`调整终端大小失败: ${data.message}\n`);
+                }
+            })
+            .catch(error => {
+                appendToTerminal(`调整终端大小错误: ${error}\n`);
+            });
+        }
+
+        // 页面加载完成后的初始化
+        window.onload = function() {
+            updateStatus('未连接', 'disconnected');
+        };
+    </script>
+</body>
+</html> 

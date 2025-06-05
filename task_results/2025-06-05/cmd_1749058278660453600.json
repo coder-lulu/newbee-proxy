@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1749058278660453600",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-06-05T01:31:18.6633444+08:00",
+  "end_time": "2025-06-05T01:31:19.4673444+08:00",
+  "execution_time_ms": 804,
+  "result_data": "{\"execution_time\":804,\"exit_code\":3,\"metadata\":{\"command\":\"systemctl status firewalld\",\"protocol\":\"ssh\",\"target\":\"192.168.26.130:22\"},\"stderr\":\"\",\"stdout\":\"○ firewalld.service - firewalld - dynamic firewall daemon\\n     Loaded: loaded (/usr/lib/systemd/system/firewalld.service; disabled; vendor preset: enabled)\\n     Active: inactive (dead)\\n       Docs: man:firewalld(1)\\n\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1749058278",
+    "target": "192.168.26.130",
+    "username": "root"
+  }
+}

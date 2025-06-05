@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewBee Agent WebSocket 连接测试</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007acc;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        .form-group label {
+            display: inline-block;
+            width: 120px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group input {
+            width: 200px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            padding: 12px 20px;
+            margin: 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .btn-primary {
+            background-color: #007acc;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #005a9e;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .log {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            margin-top: 10px;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status-connecting {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .api-test {
+            background-color: #e8f4fd;
+            border-left: 4px solid #007acc;
+        }
+        .protocol-test {
+            background-color: #f0f8e8;
+            border-left: 4px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 NewBee Agent WebSocket & guacd 功能测试</h1>
+        <p>此页面用于测试NewBee Agent的WebSocket连接和guacd相关功能</p>
+
+        <!-- API测试区域 -->
+        <div class="test-section api-test">
+            <h3>📡 HTTP API 测试</h3>
+            <button class="btn-primary" onclick="testHealthAPI()">测试健康检查</button>
+            <button class="btn-primary" onclick="testPluginsAPI()">测试插件状态</button>
+            <button class="btn-primary" onclick="testMetricsAPI()">测试指标接口</button>
+            <button class="btn-secondary" onclick="clearAPILog()">清除日志</button>
+            <div id="api-log" class="log"></div>
+        </div>
+
+        <div class="grid">
+            <!-- RDP WebSocket测试 -->
+            <div class="test-section protocol-test">
+                <h3>🖥️ RDP WebSocket 测试 <span id="rdp-status" class="status status-disconnected">未连接</span></h3>
+                <div class="form-group">
+                    <label>主机地址:</label>
+                    <input type="text" id="rdp-hostname" value="192.168.1.100" placeholder="192.168.1.100">
+                </div>
+                <div class="form-group">
+                    <label>端口:</label>
+                    <input type="text" id="rdp-port" value="3389" placeholder="3389">
+                </div>
+                <div class="form-group">
+                    <label>用户名:</label>
+                    <input type="text" id="rdp-username" value="administrator" placeholder="administrator">
+                </div>
+                <div class="form-group">
+                    <label>密码:</label>
+                    <input type="password" id="rdp-password" value="password" placeholder="password">
+                </div>
+                <button class="btn-success" onclick="connectRDP()">连接 RDP</button>
+                <button class="btn-danger" onclick="disconnectRDP()">断开连接</button>
+                <button class="btn-secondary" onclick="clearRDPLog()">清除日志</button>
+                <div id="rdp-log" class="log"></div>
+            </div>
+
+            <!-- SSH WebSocket测试 -->
+            <div class="test-section protocol-test">
+                <h3>🔗 SSH WebSocket 测试 <span id="ssh-status" class="status status-disconnected">未连接</span></h3>
+                <div class="form-group">
+                    <label>主机地址:</label>
+                    <input type="text" id="ssh-hostname" value="192.168.1.100" placeholder="192.168.1.100">
+                </div>
+                <div class="form-group">
+                    <label>端口:</label>
+                    <input type="text" id="ssh-port" value="22" placeholder="22">
+                </div>
+                <div class="form-group">
+                    <label>用户名:</label>
+                    <input type="text" id="ssh-username" value="root" placeholder="root">
+                </div>
+                <div class="form-group">
+                    <label>密码:</label>
+                    <input type="password" id="ssh-password" value="password" placeholder="password">
+                </div>
+                <button class="btn-success" onclick="connectSSH()">连接 SSH</button>
+                <button class="btn-danger" onclick="disconnectSSH()">断开连接</button>
+                <button class="btn-secondary" onclick="clearSSHLog()">清除日志</button>
+                <div id="ssh-log" class="log"></div>
+            </div>
+        </div>
+
+        <!-- VNC和Telnet测试 -->
+        <div class="grid">
+            <div class="test-section protocol-test">
+                <h3>🖱️ VNC WebSocket 测试 <span id="vnc-status" class="status status-disconnected">未连接</span></h3>
+                <div class="form-group">
+                    <label>主机地址:</label>
+                    <input type="text" id="vnc-hostname" value="192.168.1.100" placeholder="192.168.1.100">
+                </div>
+                <div class="form-group">
+                    <label>端口:</label>
+                    <input type="text" id="vnc-port" value="5900" placeholder="5900">
+                </div>
+                <div class="form-group">
+                    <label>密码:</label>
+                    <input type="password" id="vnc-password" value="password" placeholder="VNC密码">
+                </div>
+                <button class="btn-success" onclick="connectVNC()">连接 VNC</button>
+                <button class="btn-danger" onclick="disconnectVNC()">断开连接</button>
+                <button class="btn-secondary" onclick="clearVNCLog()">清除日志</button>
+                <div id="vnc-log" class="log"></div>
+            </div>
+
+            <div class="test-section protocol-test">
+                <h3>📟 Telnet WebSocket 测试 <span id="telnet-status" class="status status-disconnected">未连接</span></h3>
+                <div class="form-group">
+                    <label>主机地址:</label>
+                    <input type="text" id="telnet-hostname" value="192.168.1.100" placeholder="192.168.1.100">
+                </div>
+                <div class="form-group">
+                    <label>端口:</label>
+                    <input type="text" id="telnet-port" value="23" placeholder="23">
+                </div>
+                <button class="btn-success" onclick="connectTelnet()">连接 Telnet</button>
+                <button class="btn-danger" onclick="disconnectTelnet()">断开连接</button>
+                <button class="btn-secondary" onclick="clearTelnetLog()">清除日志</button>
+                <div id="telnet-log" class="log"></div>
+            </div>
+        </div>
+
+        <!-- 测试说明 -->
+        <div class="test-section">
+            <h3>📋 测试说明</h3>
+            <ul>
+                <li><strong>API测试</strong>: 测试Agent的HTTP接口是否正常工作</li>
+                <li><strong>WebSocket测试</strong>: 测试各协议的WebSocket连接是否可以建立</li>
+                <li><strong>连接参数</strong>: 请修改为实际的主机地址和认证信息</li>
+                <li><strong>预期结果</strong>: 
+                    <ul>
+                        <li>如果guacd服务正常，WebSocket应该能建立连接</li>
+                        <li>如果guacd服务异常，会看到连接错误或立即关闭</li>
+                        <li>400错误通常表示路由存在但参数不正确</li>
+                        <li>404错误表示路由不存在</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const baseURL = 'http://localhost:8889';
+        const wsBaseURL = 'ws://localhost:8889';
+        
+        let rdpWS = null;
+        let sshWS = null;
+        let vncWS = null;
+        let telnetWS = null;
+
+        // 日志函数
+        function log(containerId, message, type = 'info') {
+            const logDiv = document.getElementById(containerId);
+            const timestamp = new Date().toLocaleTimeString();
+            const typeIcon = {
+                'info': 'ℹ️',
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️'
+            };
+            logDiv.innerHTML += `<div>[${timestamp}] ${typeIcon[type] || 'ℹ️'} ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+
+        function updateStatus(statusId, status) {
+            const statusEl = document.getElementById(statusId);
+            statusEl.className = `status status-${status}`;
+            statusEl.textContent = {
+                'connected': '已连接',
+                'connecting': '连接中',
+                'disconnected': '未连接'
+            }[status];
+        }
+
+        // API测试函数
+        async function testHealthAPI() {
+            log('api-log', '测试健康检查接口...', 'info');
+            try {
+                const response = await fetch(`${baseURL}/health`);
+                const data = await response.json();
+                log('api-log', `健康检查成功 - 状态: ${data.status}`, 'success');
+                log('api-log', `Agent ID: ${data.agent_id}, 版本: ${data.version}`, 'info');
+                log('api-log', `Guacd状态: ${data.guacd_status}`, data.guacd_status === 'connected' ? 'success' : 'warning');
+                if (data.plugin_details) {
+                    log('api-log', `插件状态: ${JSON.stringify(data.plugin_details, null, 2)}`, 'info');
+                }
+            } catch (error) {
+                log('api-log', `健康检查失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function testPluginsAPI() {
+            log('api-log', '测试插件状态接口...', 'info');
+            try {
+                const response = await fetch(`${baseURL}/plugins`);
+                const data = await response.json();
+                log('api-log', `插件状态获取成功 - 插件数量: ${data.total_count}`, 'success');
+                log('api-log', `已加载插件: ${data.loaded_plugins.join(', ')}`, 'info');
+            } catch (error) {
+                log('api-log', `插件状态获取失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function testMetricsAPI() {
+            log('api-log', '测试指标接口...', 'info');
+            try {
+                const response = await fetch(`${baseURL}/metrics`);
+                const data = await response.json();
+                log('api-log', `指标获取成功 - 活跃会话: ${data.active_sessions}, 已加载插件: ${data.loaded_plugins}`, 'success');
+            } catch (error) {
+                log('api-log', `指标获取失败: ${error.message}`, 'error');
+            }
+        }
+
+        function clearAPILog() {
+            clearLog('api-log');
+        }
+
+        // WebSocket连接函数
+        function connectRDP() {
+            if (rdpWS) {
+                log('rdp-log', 'RDP连接已存在', 'warning');
+                return;
+            }
+
+            const hostname = document.getElementById('rdp-hostname').value;
+            const port = document.getElementById('rdp-port').value;
+            const username = document.getElementById('rdp-username').value;
+            const password = document.getElementById('rdp-password').value;
+
+            const wsURL = `${wsBaseURL}/api/rdp/websocket?hostname=${hostname}&port=${port}&username=${username}&password=${password}`;
+            
+            log('rdp-log', `尝试连接RDP: ${hostname}:${port}`, 'info');
+            updateStatus('rdp-status', 'connecting');
+
+            rdpWS = new WebSocket(wsURL);
+
+            rdpWS.onopen = function(event) {
+                log('rdp-log', 'RDP WebSocket连接已建立', 'success');
+                updateStatus('rdp-status', 'connected');
+            };
+
+            rdpWS.onmessage = function(event) {
+                log('rdp-log', `收到消息: ${event.data}`, 'info');
+            };
+
+            rdpWS.onerror = function(error) {
+                log('rdp-log', `WebSocket错误: ${error}`, 'error');
+                updateStatus('rdp-status', 'disconnected');
+            };
+
+            rdpWS.onclose = function(event) {
+                log('rdp-log', `WebSocket连接已关闭 - 代码: ${event.code}, 原因: ${event.reason}`, 'warning');
+                updateStatus('rdp-status', 'disconnected');
+                rdpWS = null;
+            };
+        }
+
+        function disconnectRDP() {
+            if (rdpWS) {
+                rdpWS.close();
+                log('rdp-log', '主动断开RDP连接', 'info');
+            }
+        }
+
+        function clearRDPLog() {
+            clearLog('rdp-log');
+        }
+
+        // 类似的SSH连接函数
+        function connectSSH() {
+            if (sshWS) {
+                log('ssh-log', 'SSH连接已存在', 'warning');
+                return;
+            }
+
+            const hostname = document.getElementById('ssh-hostname').value;
+            const port = document.getElementById('ssh-port').value;
+            const username = document.getElementById('ssh-username').value;
+            const password = document.getElementById('ssh-password').value;
+
+            const wsURL = `${wsBaseURL}/api/ssh/websocket?hostname=${hostname}&port=${port}&username=${username}&password=${password}`;
+            
+            log('ssh-log', `尝试连接SSH: ${hostname}:${port}`, 'info');
+            updateStatus('ssh-status', 'connecting');
+
+            sshWS = new WebSocket(wsURL);
+
+            sshWS.onopen = function(event) {
+                log('ssh-log', 'SSH WebSocket连接已建立', 'success');
+                updateStatus('ssh-status', 'connected');
+            };
+
+            sshWS.onmessage = function(event) {
+                log('ssh-log', `收到消息: ${event.data}`, 'info');
+            };
+
+            sshWS.onerror = function(error) {
+                log('ssh-log', `WebSocket错误: ${error}`, 'error');
+                updateStatus('ssh-status', 'disconnected');
+            };
+
+            sshWS.onclose = function(event) {
+                log('ssh-log', `WebSocket连接已关闭 - 代码: ${event.code}, 原因: ${event.reason}`, 'warning');
+                updateStatus('ssh-status', 'disconnected');
+                sshWS = null;
+            };
+        }
+
+        function disconnectSSH() {
+            if (sshWS) {
+                sshWS.close();
+                log('ssh-log', '主动断开SSH连接', 'info');
+            }
+        }
+
+        function clearSSHLog() {
+            clearLog('ssh-log');
+        }
+
+        // VNC连接函数
+        function connectVNC() {
+            if (vncWS) {
+                log('vnc-log', 'VNC连接已存在', 'warning');
+                return;
+            }
+
+            const hostname = document.getElementById('vnc-hostname').value;
+            const port = document.getElementById('vnc-port').value;
+            const password = document.getElementById('vnc-password').value;
+
+            const wsURL = `${wsBaseURL}/api/vnc/websocket?hostname=${hostname}&port=${port}&password=${password}`;
+            
+            log('vnc-log', `尝试连接VNC: ${hostname}:${port}`, 'info');
+            updateStatus('vnc-status', 'connecting');
+
+            vncWS = new WebSocket(wsURL);
+
+            vncWS.onopen = function(event) {
+                log('vnc-log', 'VNC WebSocket连接已建立', 'success');
+                updateStatus('vnc-status', 'connected');
+            };
+
+            vncWS.onmessage = function(event) {
+                log('vnc-log', `收到消息: ${event.data}`, 'info');
+            };
+
+            vncWS.onerror = function(error) {
+                log('vnc-log', `WebSocket错误: ${error}`, 'error');
+                updateStatus('vnc-status', 'disconnected');
+            };
+
+            vncWS.onclose = function(event) {
+                log('vnc-log', `WebSocket连接已关闭 - 代码: ${event.code}, 原因: ${event.reason}`, 'warning');
+                updateStatus('vnc-status', 'disconnected');
+                vncWS = null;
+            };
+        }
+
+        function disconnectVNC() {
+            if (vncWS) {
+                vncWS.close();
+                log('vnc-log', '主动断开VNC连接', 'info');
+            }
+        }
+
+        function clearVNCLog() {
+            clearLog('vnc-log');
+        }
+
+        // Telnet连接函数
+        function connectTelnet() {
+            if (telnetWS) {
+                log('telnet-log', 'Telnet连接已存在', 'warning');
+                return;
+            }
+
+            const hostname = document.getElementById('telnet-hostname').value;
+            const port = document.getElementById('telnet-port').value;
+
+            const wsURL = `${wsBaseURL}/api/telnet/websocket?hostname=${hostname}&port=${port}`;
+            
+            log('telnet-log', `尝试连接Telnet: ${hostname}:${port}`, 'info');
+            updateStatus('telnet-status', 'connecting');
+
+            telnetWS = new WebSocket(wsURL);
+
+            telnetWS.onopen = function(event) {
+                log('telnet-log', 'Telnet WebSocket连接已建立', 'success');
+                updateStatus('telnet-status', 'connected');
+            };
+
+            telnetWS.onmessage = function(event) {
+                log('telnet-log', `收到消息: ${event.data}`, 'info');
+            };
+
+            telnetWS.onerror = function(error) {
+                log('telnet-log', `WebSocket错误: ${error}`, 'error');
+                updateStatus('telnet-status', 'disconnected');
+            };
+
+            telnetWS.onclose = function(event) {
+                log('telnet-log', `WebSocket连接已关闭 - 代码: ${event.code}, 原因: ${event.reason}`, 'warning');
+                updateStatus('telnet-status', 'disconnected');
+                telnetWS = null;
+            };
+        }
+
+        function disconnectTelnet() {
+            if (telnetWS) {
+                telnetWS.close();
+                log('telnet-log', '主动断开Telnet连接', 'info');
+            }
+        }
+
+        function clearTelnetLog() {
+            clearLog('telnet-log');
+        }
+
+        // 页面加载时的初始化
+        window.onload = function() {
+            log('api-log', 'NewBee Agent 测试页面已加载', 'success');
+            log('api-log', '请先测试HTTP API接口，然后再测试WebSocket连接', 'info');
+        };
+
+        // 页面关闭时清理WebSocket连接
+        window.onbeforeunload = function() {
+            if (rdpWS) rdpWS.close();
+            if (sshWS) sshWS.close();
+            if (vncWS) vncWS.close();
+            if (telnetWS) telnetWS.close();
+        };
+    </script>
+</body>
+</html> 

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telnet Terminal - Agent服务</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .connection-form {
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #cccccc;
+        }
+        
+        input, button {
+            padding: 8px;
+            border: 1px solid #555;
+            border-radius: 3px;
+            background-color: #3d3d3d;
+            color: #ffffff;
+            width: 200px;
+        }
+        
+        button {
+            background-color: #0066cc;
+            cursor: pointer;
+            width: auto;
+            padding: 10px 20px;
+        }
+        
+        button:hover {
+            background-color: #0052a3;
+        }
+        
+        button:disabled {
+            background-color: #666666;
+            cursor: not-allowed;
+        }
+        
+        #terminal {
+            background-color: #000000;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 5px;
+            height: 500px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            border: 2px solid #333;
+        }
+        
+        #commandInput {
+            width: calc(100% - 20px);
+            margin-top: 10px;
+            background-color: #000000;
+            color: #00ff00;
+            border: 1px solid #333;
+        }
+        
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        
+        .status.connected {
+            background-color: #2d4a2d;
+            color: #90ee90;
+        }
+        
+        .status.disconnected {
+            background-color: #4a2d2d;
+            color: #ff9090;
+        }
+        
+        .status.connecting {
+            background-color: #4a4a2d;
+            color: #ffff90;
+        }
+        
+        .controls {
+            margin: 10px 0;
+        }
+        
+        .controls button {
+            margin-right: 10px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌐 Telnet Terminal</h1>
+            <p>通过WebSocket连接到远程Telnet设备</p>
+        </div>
+        
+        <div class="connection-form">
+            <h3>连接配置</h3>
+            <div class="form-group">
+                <label for="host">主机地址:</label>
+                <input type="text" id="host" value="192.168.26.130" placeholder="例: 192.168.1.100">
+            </div>
+            
+            <div class="form-group">
+                <label for="port">端口:</label>
+                <input type="number" id="port" value="23" placeholder="例: 23">
+            </div>
+            
+            <div class="form-group">
+                <label for="username">用户名 (可选):</label>
+                <input type="text" id="username" value="root" placeholder="留空为仅密码认证">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">密码:</label>
+                <input type="password" id="password" value="123456" placeholder="设备密码">
+            </div>
+            
+            <button id="connectBtn" onclick="connect()">连接</button>
+            <button id="disconnectBtn" onclick="disconnect()" disabled>断开连接</button>
+        </div>
+        
+        <div id="status" class="status disconnected">未连接</div>
+        
+        <div class="controls">
+            <button onclick="clearTerminal()">清屏</button>
+            <button onclick="sendCommand('ls -la')">测试: ls -la</button>
+            <button onclick="sendCommand('pwd')">测试: pwd</button>
+            <button onclick="sendCommand('whoami')">测试: whoami</button>
+            <button onclick="sendCommand('ip a')">测试: ip a</button>
+        </div>
+        
+        <div id="terminal"></div>
+        
+        <input type="text" id="commandInput" placeholder="在此输入命令并按回车..." 
+               onkeypress="handleKeyPress(event)" disabled>
+    </div>
+
+    <script>
+        let ws = null;
+        let isConnected = false;
+        
+        const terminal = document.getElementById('terminal');
+        const status = document.getElementById('status');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const commandInput = document.getElementById('commandInput');
+        
+        function updateStatus(message, type) {
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+        
+        function appendToTerminal(text) {
+            terminal.textContent += text;
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+        
+        function clearTerminal() {
+            terminal.textContent = '';
+        }
+        
+        function connect() {
+            const host = document.getElementById('host').value;
+            const port = parseInt(document.getElementById('port').value);
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!host || !port || !password) {
+                alert('请填写主机地址、端口和密码！');
+                return;
+            }
+            
+            updateStatus('正在连接...', 'connecting');
+            connectBtn.disabled = true;
+            
+            // 连接到WebSocket
+            const wsUrl = `ws://localhost:8889/ws/telnet`;
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function() {
+                appendToTerminal('WebSocket连接已建立\n');
+                
+                // 发送连接请求
+                const request = {
+                    target: host,
+                    port: port,
+                    username: username,
+                    password: password,
+                    cols: 80,
+                    rows: 24,
+                    session_id: `telnet_${Date.now()}`
+                };
+                
+                appendToTerminal(`正在连接到 ${host}:${port}...\n`);
+                ws.send(JSON.stringify(request));
+            };
+            
+            ws.onmessage = function(event) {
+                try {
+                    // 尝试解析JSON响应
+                    const response = JSON.parse(event.data);
+                    if (response.success !== undefined) {
+                        if (response.success) {
+                            updateStatus(`已连接到 ${host}:${port}`, 'connected');
+                            isConnected = true;
+                            disconnectBtn.disabled = false;
+                            commandInput.disabled = false;
+                            commandInput.focus();
+                            appendToTerminal(`✅ 连接成功! 会话ID: ${response.connection_id}\n`);
+                            appendToTerminal('='.repeat(60) + '\n');
+                        } else {
+                            updateStatus(`连接失败: ${response.message}`, 'disconnected');
+                            appendToTerminal(`❌ 连接失败: ${response.message}\n`);
+                            ws.close();
+                        }
+                    }
+                } catch (e) {
+                    // 不是JSON，是终端数据
+                    appendToTerminal(event.data);
+                }
+            };
+            
+            ws.onclose = function() {
+                updateStatus('连接已断开', 'disconnected');
+                isConnected = false;
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                commandInput.disabled = true;
+                appendToTerminal('\n连接已关闭\n');
+                ws = null;
+            };
+            
+            ws.onerror = function(error) {
+                updateStatus('连接错误', 'disconnected');
+                appendToTerminal(`❌ WebSocket错误: ${error}\n`);
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                commandInput.disabled = true;
+            };
+        }
+        
+        function disconnect() {
+            if (ws) {
+                ws.close();
+            }
+        }
+        
+        function sendCommand(command) {
+            if (!isConnected || !ws) {
+                alert('请先连接到设备！');
+                return;
+            }
+            
+            appendToTerminal(`> ${command}\n`);
+            ws.send(command + '\r\n');
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                const command = commandInput.value;
+                if (command.trim()) {
+                    sendCommand(command);
+                    commandInput.value = '';
+                }
+            }
+        }
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            appendToTerminal('Telnet Terminal 已就绪\n');
+            appendToTerminal('请填写连接信息并点击"连接"按钮\n\n');
+        });
+    </script>
+</body>
+</html> 

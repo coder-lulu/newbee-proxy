@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1749134264406930500",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-06-05T22:37:44.4106042+08:00",
+  "end_time": "2025-06-05T22:37:44.6426042+08:00",
+  "execution_time_ms": 232,
+  "result_data": "{\"execution_time\":232,\"exit_code\":1,\"metadata\":{\"command\":\"=== 开始执行命令 ===\\n执行时间: 2025/6/5 22:37:00\\n执行主机: 2 台主机\\n执行凭证: 默认账号 (root)\\n超时时间: 0 秒\\n执行描述: 无\\n命令内容: uname -a\\n\\n正在向后端发送执行请求...\\n后端响应已收到，开始处理执行结果...\\n\\n\\u003e 主机: host131 (192.168.26.131)\\n状态: 等待中\\n耗时: 5ms\\n退出代码: 0\\n标准输出:\\nLinux node-bc21 4.19.90-2107.6.0.0100.oe1.bclinux.x86_64 #1 SMP Wed Dec 1 19:59:44 CST 2021 x86_64 x86_64 x86_64 GNU/Linux\\n\\n\\n\\u003e 主机: code-server (192.168.26.130)\\n状态: 等待中\\n耗时: 5ms\\n退出代码: 0\\n标准输出:\\nLinux code-server 5.10.0-60.70.0.94.oe2203.bclinux.x86_64 #1 SMP Mon Dec 19 17:06:33 CST 2022 x86_64 x86_64 x86_64 GNU/Linux\\n\\n\\n=== 命令执行完成 ===\\n总主机数: 2\\n成功: 2 台\\n失败: 0 台\\n\",\"protocol\":\"ssh\",\"target\":\"192.168.26.131:22\"},\"stderr\":\"bash: ===: command not found\\nbash: line 1: 执行时间:: command not found\\nbash: line 2: 执行主机:: command not found\\nbash: -c: line 3: syntax error near unexpected token `('\\nbash: -c: line 3: `执行凭证: 默认账号 (root)'\\n\",\"stdout\":\"\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1749134264",
+    "target": "192.168.26.131",
+    "username": "root"
+  }
+}

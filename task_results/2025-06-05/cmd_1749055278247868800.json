@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1749055278247868800",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-06-05T00:41:18.2504031+08:00",
+  "end_time": "2025-06-05T00:41:18.8944031+08:00",
+  "execution_time_ms": 644,
+  "result_data": "{\"execution_time\":644,\"exit_code\":0,\"metadata\":{\"command\":\"hostname\",\"protocol\":\"ssh\",\"target\":\"192.168.26.130:22\"},\"stderr\":\"\",\"stdout\":\"code-server\\n\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1749055278",
+    "target": "192.168.26.130",
+    "username": "root"
+  }
+}

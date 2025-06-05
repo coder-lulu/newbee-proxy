@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1749056101050763200",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-06-05T00:55:01.0528563+08:00",
+  "end_time": "2025-06-05T00:55:01.7248563+08:00",
+  "execution_time_ms": 672,
+  "result_data": "{\"execution_time\":672,\"exit_code\":0,\"metadata\":{\"command\":\"cat /etc/passwd\",\"protocol\":\"ssh\",\"target\":\"192.168.26.130:22\"},\"stderr\":\"\",\"stdout\":\"root:x:0:0:root:/root:/bin/bash\\nbin:x:1:1:bin:/bin:/sbin/nologin\\ndaemon:x:2:2:daemon:/sbin:/sbin/nologin\\nadm:x:3:4:adm:/var/adm:/sbin/nologin\\nlp:x:4:7:lp:/var/spool/lpd:/sbin/nologin\\nsync:x:5:0:sync:/sbin:/bin/sync\\nshutdown:x:6:0:shutdown:/sbin:/sbin/shutdown\\nhalt:x:7:0:halt:/sbin:/sbin/halt\\nmail:x:8:12:mail:/var/spool/mail:/sbin/nologin\\noperator:x:11:0:operator:/root:/sbin/nologin\\ngames:x:12:100:games:/usr/games:/sbin/nologin\\nftp:x:14:50:FTP User:/var/ftp:/sbin/nologin\\nnobody:x:65534:65534:Kernel Overflow User:/:/sbin/nologin\\nsystemd-coredump:x:999:997:systemd Core Dumper:/:/sbin/nologin\\nsaslauth:x:998:76:Saslauthd user:/run/saslauthd:/sbin/nologin\\nrpc:x:32:32:Rpcbind Daemon:/var/lib/rpcbind:/sbin/nologin\\nunbound:x:997:996:Unbound DNS resolver:/etc/unbound:/sbin/nologin\\ndhcpd:x:177:177:DHCP server:/:/sbin/nologin\\nsshd:x:74:74:Privilege-separated SSH:/var/empty/sshd:/sbin/nologin\\ndbus:x:81:81:D-Bus:/var/run/dbus:/sbin/nologin\\npolkitd:x:996:994:User for polkitd:/:/sbin/nologin\\ntss:x:59:59:Account used by the trousers package to sandbox the tcsd daemon:/dev/null:/sbin/nologin\\nrpcuser:x:29:29:RPC Service User:/var/lib/nfs:/sbin/nologin\\nchrony:x:995:992::/var/lib/chrony:/sbin/nologin\\nsystemd-network:x:990:990:systemd Network Management:/:/usr/sbin/nologin\\nsystemd-resolve:x:989:989:systemd Resolver:/:/usr/sbin/nologin\\nsystemd-timesync:x:988:988:systemd Time Synchronization:/:/usr/sbin/nologin\\nexam:x:1000:1000::/home/exam:/bin/bash\\napache:x:48:48:Apache:/usr/share/httpd:/sbin/nologin\\n\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1749056101",
+    "target": "192.168.26.130",
+    "username": "root"
+  }
+}

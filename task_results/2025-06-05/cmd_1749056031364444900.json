@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1749056031364444900",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-06-05T00:53:51.3660356+08:00",
+  "end_time": "2025-06-05T00:53:52.1180356+08:00",
+  "execution_time_ms": 752,
+  "result_data": "{\"execution_time\":751,\"exit_code\":2,\"metadata\":{\"command\":\"=== 开始执行命令 ===\\n执行时间: 2025/6/5 00:52:17\\n执行主机: 1 台主机\\n执行凭证: 测试主机凭证 (root)\\n超时时间: 0 秒\\n执行描述: 无\\n命令内容: ip a\\n\\n正在向后端发送执行请求...\\n后端响应已收到，开始处理执行结果...\\n\\n没有收到执行结果\\n\",\"protocol\":\"ssh\",\"target\":\"192.168.26.130:22\"},\"stderr\":\"bash: line 1: ===: command not found\\nbash: line 2: 执行时间:: command not found\\nbash: line 3: 执行主机:: command not found\\nbash: -c: line 4: syntax error near unexpected token `('\\nbash: -c: line 4: `执行凭证: 测试主机凭证 (root)'\\n\",\"stdout\":\"\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1749056031",
+    "target": "192.168.26.130",
+    "username": "root"
+  }
+}

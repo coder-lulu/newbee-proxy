@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1748657455529088600",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_TIMEOUT",
+  "start_time": "2025-05-31T10:11:05.532736+08:00",
+  "end_time": "2025-05-31T10:16:05.532736+08:00",
+  "execution_time_ms": 300000,
+  "result_data": "",
+  "error_message": "任务执行超时",
+  "metadata": {
+    "command_id": "cmd_1748657455",
+    "target": "192.168.26.130",
+    "username": "root"
+  }
+}

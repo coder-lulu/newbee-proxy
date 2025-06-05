@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Guacamole守护进程 - 处理RDP/VNC/SSH协议
+  guacd:
+    image: guacamole/guacd:latest
+    container_name: newbee-guacd
+    ports:
+      - "4822:4822"  # Guacamole守护进程端口
+    restart: unless-stopped
+    environment:
+      # 设置日志级别
+      GUACD_LOG_LEVEL: info
+    networks:
+      - guacamole-net
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "4822"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 可选：Guacamole Web应用 (如果需要独立的管理界面)
+  guacamole-web:
+    image: guacamole/guacamole:latest
+    container_name: newbee-guacamole-web
+    ports:
+      - "8080:8080"  # Guacamole Web界面
+    environment:
+      GUACD_HOSTNAME: guacd
+      GUACD_PORT: 4822
+      # 使用内存数据库进行简单配置
+      GUACAMOLE_HOME: /opt/guacamole
+    depends_on:
+      guacd:
+        condition: service_healthy
+    networks:
+      - guacamole-net
+    restart: unless-stopped
+    profiles:
+      - web  # 使用profile控制是否启动Web界面
+
+networks:
+  guacamole-net:
+    driver: bridge
+    name: guacamole-network
+
+volumes:
+  guacamole-data:
+    name: guacamole-data 

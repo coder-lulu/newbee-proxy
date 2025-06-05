@@ -10,6 +10,9 @@ SERVICE_SNAKE=agent
 # Service name in snake format | 项目名称短杠格式
 SERVICE_DASH=agent
 
+# The main module path | 主模块路径
+MAIN_MODULE_PATH=cmd/agent/main.go
+
 # The project version, if you don't use git, you should set it manually | 项目版本，如果不使用git请手动设置
 VERSION=$(shell git describe --tags --always)
 
@@ -61,7 +64,6 @@ tools: # Install the necessary tools | 安装必要的工具
 	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest;
 	$(GO) install github.com/go-swagger/go-swagger/cmd/swagger@latest
 
-
 .PHONY: docker
 docker: # Build the docker image | 构建 docker 镜像
 	docker build -f Dockerfile -t $(DOCKER_REPO)/$(SERVICE_DASH)-$(PROJECT_BUILD_SUFFIX):$(VERSION) .
@@ -72,48 +74,52 @@ publish-docker: # Publish docker image | 发布 docker 镜像
 	docker push $(DOCKER_REPO)/$(SERVICE_DASH)-$(PROJECT_BUILD_SUFFIX):$(VERSION)
 	@echo "Publish docker successfully"
 
-.PHONY: gen-swagger
-gen-swagger: # Generate swagger file | 生成 swagger 文件
-	swagger generate spec --output=./$(SERVICE_STYLE).$(SWAGGER_TYPE) --scan-models
-	@echo "Generate swagger successfully"
-
-.PHONY: serve-swagger
-serve-swagger: # Run the swagger server | 运行 swagger 服务
-	lsof -i:36666 | awk 'NR!=1 {print $2}' | xargs killall -9 || true
-	swagger serve -F=swagger --port 36666 $(SERVICE_STYLE).$(SWAGGER_TYPE)
-	@echo "Serve swagger-ui successfully"
-
-.PHONY: gen-api
-gen-api: # Generate API files | 生成 API 的代码
-	goctls api go --api ./desc/all.api --dir ./ --trans_err=true --style=$(PROJECT_STYLE)
-	swagger generate spec --output=./$(SERVICE_STYLE).$(SWAGGER_TYPE) --scan-models
-	@echo "Generate API codes successfully"
-
-.PHONY: gen-ent
-gen-ent: # Generate Ent codes | 生成 Ent 的代码
-	go run -mod=mod entgo.io/ent/cmd/ent generate --template glob="./ent/template/*.tmpl" ./ent/schema --feature $(ENT_FEATURE)
-	@echo "Generate Ent codes successfully"
-
-.PHONY: gen-api-ent-logic
-gen-api-ent-logic: # Generate CRUD logic from Ent, need to set model and group | 根据 Ent 生成 CRUD 代码，需要设置 model 和 group
-	goctls api ent --schema=./ent/schema --style=$(PROJECT_STYLE) --api_service_name=$(SERVICE) --output=./ --model=$(model) --group=$(group) --i18n=$(PROJECT_I18N) --overwrite=true --api_data=$(AUTO_API_INIT_DATA)
-	@echo "Generate CRUD codes from Ent successfully"
-
 .PHONY: build-win
 build-win: # Build project for Windows | 构建Windows下的可执行文件
-	env CGO_ENABLED=0 GOOS=windows GOARCH=$(GOARCH) go build -ldflags "$(LDFLAGS)" -trimpath -o $(SERVICE_STYLE)_$(PROJECT_BUILD_SUFFIX).exe $(SERVICE_STYLE).go
+	env CGO_ENABLED=0 GOOS=windows GOARCH=$(GOARCH) go build -ldflags "$(LDFLAGS)" -trimpath -o bin/$(SERVICE_STYLE).exe $(MAIN_MODULE_PATH)
 	@echo "Build project for Windows successfully"
 
 .PHONY: build-mac
 build-mac: # Build project for MacOS | 构建MacOS下的可执行文件
-	env CGO_ENABLED=0 GOOS=darwin GOARCH=$(GOARCH) go build -ldflags "$(LDFLAGS)" -trimpath -o $(SERVICE_STYLE)_$(PROJECT_BUILD_SUFFIX) $(SERVICE_STYLE).go
+	env CGO_ENABLED=0 GOOS=darwin GOARCH=$(GOARCH) go build -ldflags "$(LDFLAGS)" -trimpath -o bin/$(SERVICE_STYLE) $(MAIN_MODULE_PATH)
 	@echo "Build project for MacOS successfully"
 
 .PHONY: build-linux
 build-linux: # Build project for Linux | 构建Linux下的可执行文件
-	env CGO_ENABLED=0 GOOS=linux GOARCH=$(GOARCH) go build -ldflags "$(LDFLAGS)" -trimpath -o $(SERVICE_STYLE)_$(PROJECT_BUILD_SUFFIX) $(SERVICE_STYLE).go
+	env CGO_ENABLED=0 GOOS=linux GOARCH=$(GOARCH) go build -ldflags "$(LDFLAGS)" -trimpath -o bin/$(SERVICE_STYLE) $(MAIN_MODULE_PATH)
 	@echo "Build project for Linux successfully"
 
 .PHONY: help
 help: # Show help | 显示帮助
-	@grep -E '^[a-zA-Z0-9 -]+:.*#'  Makefile | sort | while read -r l; do printf "\033[1;32m$$(echo $$l | cut -f 1 -d':')\033[00m:$$(echo $$l | cut -f 2- -d'#')\n"; done
+	@echo "可用命令:"
+	@echo "  gen-proto    生成protobuf代码"
+	@echo "  gen-api      生成API代码"
+	@echo "  build        编译项目"
+	@echo "  test         运行测试"
+	@echo "  run          运行Agent服务"
+	@echo "  clean        清理构建文件"
+	@echo "  docker       构建Docker镜像"
+	@echo "  help         显示帮助信息"
+
+.PHONY: gen-proto
+gen-proto:
+	@echo "生成protobuf代码..."
+	@cd proto && protoc --go_out=. --go-grpc_out=. agent.proto
+	@echo "protobuf代码生成完成"
+
+.PHONY: run
+run:
+	@echo "启动Agent服务..."
+	@go run cmd/agent/main.go -f etc/agent.yaml
+
+.PHONY: clean
+clean:
+	@echo "清理构建文件..."
+	@rm -rf bin/
+	@rm -rf proto/*.pb.go
+	@echo "清理完成"
+
+.PHONY: dev
+dev:
+	@echo "启动热重载开发模式..."
+	@air -c .air.toml

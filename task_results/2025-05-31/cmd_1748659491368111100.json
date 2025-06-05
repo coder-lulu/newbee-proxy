@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1748659491368111100",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_FAILED",
+  "start_time": "2025-05-31T10:44:51.3693172+08:00",
+  "end_time": "2025-05-31T10:45:01.3753172+08:00",
+  "execution_time_ms": 10006,
+  "result_data": "",
+  "error_message": "认证后等待命令提示符失败: 读取超时: read tcp 192.168.26.1:62615-\u003e192.168.26.130:23: i/o timeout",
+  "metadata": {
+    "command_id": "cmd_1748659491",
+    "target": "192.168.26.130",
+    "username": "root"
+  }
+}

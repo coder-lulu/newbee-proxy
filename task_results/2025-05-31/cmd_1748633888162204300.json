@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1748633888162204300",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-05-31T03:38:08.1624183+08:00",
+  "end_time": "2025-05-31T03:38:08.9054183+08:00",
+  "execution_time_ms": 743,
+  "result_data": "{\"execution_time\":742,\"exit_code\":0,\"metadata\":{\"command\":\"ls -la /\",\"protocol\":\"ssh\",\"target\":\"192.168.26.130:22\"},\"stderr\":\"\",\"stdout\":\"total 76\\ndr-xr-xr-x.  21 root root  4096 May  8 11:57 .\\ndr-xr-xr-x.  21 root root  4096 May  8 11:57 ..\\ndr-xr-xr-x.   2 root root  4096 Mar 13  2022 afs\\nlrwxrwxrwx.   1 root root     7 Mar 13  2022 bin -\\u003e usr/bin\\ndr-xr-xr-x.   7 root root  4096 Mar 30  2024 boot\\ndrwxr-xr-x.   5 root root  4096 Apr 13 01:03 data\\ndrwxr-xr-x   19 root root  3160 May 25 10:38 dev\\ndrwxr-xr-x.  99 root root  4096 May 25 10:38 etc\\ndrwxr-xr-x.   5 root root  4096 Mar 12 13:20 home\\nlrwxrwxrwx.   1 root root     7 Mar 13  2022 lib -\\u003e usr/lib\\nlrwxrwxrwx.   1 root root     9 Mar 13  2022 lib64 -\\u003e usr/lib64\\ndrwx------.   2 root root 16384 Mar 30  2024 lost+found\\ndrwxr-xr-x.   2 root root  4096 Mar 13  2022 media\\ndrwxr-xr-x.   2 root root  4096 Mar 13  2022 mnt\\ndrwxr-xr-x.   9 root root  4096 Apr 13 17:50 opt\\ndr-xr-xr-x  260 root root     0 May 25 10:38 proc\\ndr-xr-x---.  25 root root  4096 May 31 03:13 root\\ndrwxr-xr-x   33 root root  1040 May 25 10:47 run\\nlrwxrwxrwx.   1 root root     8 Mar 13  2022 sbin -\\u003e usr/sbin\\ndrwxr-xr-x.   2 root root  4096 Mar 13  2022 srv\\ndr-xr-xr-x   13 root root     0 May 25 10:38 sys\\ndrwxrwxrwt   10 root root   200 May 31 03:30 tmp\\ndrwxr-xr-x.  12 root root  4096 Mar 30  2024 usr\\ndrwxr-xr-x.  20 root root  4096 Dec 26 19:36 var\\ndrwxr-xr-x    3 root root  4096 May  8 12:02 www\\n\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1748633888",
+    "target": "192.168.26.130",
+    "username": "root"
+  }
+}

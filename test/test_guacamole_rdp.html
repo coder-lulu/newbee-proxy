@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guacamole RDP 连接测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="password"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status.connecting {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .status.connected {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status.disconnected {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .display-container {
+            margin-top: 20px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background-color: #000;
+            min-height: 400px;
+            position: relative;
+        }
+        .logs {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        #guacamole-display {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Guacamole RDP 连接测试</h1>
+        
+        <form id="connection-form">
+            <div class="form-group">
+                <label for="hostname">主机名/IP地址:</label>
+                <input type="text" id="hostname" value="192.168.26.140" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="port">端口:</label>
+                <input type="number" id="port" value="3389" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="username">用户名:</label>
+                <input type="text" id="username" value="work" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">密码:</label>
+                <input type="password" id="password" value="931214" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="width">屏幕宽度:</label>
+                <input type="number" id="width" value="1920" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="height">屏幕高度:</label>
+                <input type="number" id="height" value="1080" required>
+            </div>
+            
+            <button type="button" id="connect-btn" onclick="connect()">连接</button>
+            <button type="button" id="disconnect-btn" onclick="disconnect()" disabled>断开连接</button>
+        </form>
+        
+        <div id="status" class="status disconnected">状态: 未连接</div>
+        
+        <div class="display-container">
+            <div id="guacamole-display"></div>
+        </div>
+        
+        <div class="logs" id="logs"></div>
+    </div>
+
+    <!-- 使用标准的Guacamole JavaScript库 -->
+    <script src="/agent/guacamole-common.js"></script>
+    <script>
+        let client = null;
+        let tunnel = null;
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('logs');
+            logElement.innerHTML += `[${timestamp}] ${message}<br>`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function updateStatus(status) {
+            const statusElement = document.getElementById('status');
+            const connectBtn = document.getElementById('connect-btn');
+            const disconnectBtn = document.getElementById('disconnect-btn');
+            
+            statusElement.className = 'status ' + status;
+            
+            switch(status) {
+                case 'connecting':
+                    statusElement.textContent = '状态: 连接中...';
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                    break;
+                case 'connected':
+                    statusElement.textContent = '状态: 已连接';
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                    break;
+                case 'disconnected':
+                    statusElement.textContent = '状态: 未连接';
+                    connectBtn.disabled = false;
+                    disconnectBtn.disabled = true;
+                    break;
+            }
+        }
+        
+        function connect() {
+            if (client && client.getState() !== Guacamole.Client.State.DISCONNECTED) {
+                log('[ERROR] 已有活动连接');
+                return;
+            }
+            
+            const hostname = document.getElementById('hostname').value;
+            const port = document.getElementById('port').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const width = document.getElementById('width').value;
+            const height = document.getElementById('height').value;
+            
+            if (!hostname || !port || !username || !password) {
+                log('[ERROR] 请填写所有必需字段');
+                return;
+            }
+            
+            log(`[INFO] 开始连接到 ${hostname}:${port}，用户: ${username}`);
+            
+            // 构建连接参数字符串
+            const connectionParams = `hostname=${encodeURIComponent(hostname)}&port=${encodeURIComponent(port)}&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&width=${encodeURIComponent(width)}&height=${encodeURIComponent(height)}`;
+            
+            log(`[INFO] 连接参数: ${connectionParams}`);
+            
+            try {
+                // 创建WebSocket隧道
+                tunnel = new Guacamole.WebSocketTunnel('ws://localhost:8889/api/rdp/websocket');
+                
+                // 设置隧道事件处理器
+                tunnel.onerror = function(status) {
+                    log(`[ERROR] 隧道错误: ${status.message || '未知错误'}`);
+                    updateStatus('disconnected');
+                };
+                
+                tunnel.onstatechange = function(state) {
+                    log(`[INFO] 隧道状态变化: ${state}`);
+                    switch(state) {
+                        case Guacamole.Tunnel.State.CONNECTING:
+                            log('[INFO] 隧道连接中...');
+                            break;
+                        case Guacamole.Tunnel.State.OPEN:
+                            log('[SUCCESS] WebSocket隧道已建立');
+                            break;
+                        case Guacamole.Tunnel.State.CLOSED:
+                            log('[INFO] 隧道已关闭');
+                            updateStatus('disconnected');
+                            break;
+                    }
+                };
+                
+                // 创建Guacamole客户端
+                client = new Guacamole.Client(tunnel);
+                
+                // 设置客户端事件处理器
+                client.onstatechange = function(state) {
+                    log(`[INFO] 客户端状态变化: ${state}`);
+                    switch(state) {
+                        case Guacamole.Client.State.CONNECTING:
+                            updateStatus('connecting');
+                            break;
+                        case Guacamole.Client.State.CONNECTED:
+                            updateStatus('connected');
+                            log('[SUCCESS] RDP连接已建立');
+                            break;
+                        case Guacamole.Client.State.DISCONNECTED:
+                            updateStatus('disconnected');
+                            log('[INFO] RDP连接已断开');
+                            break;
+                    }
+                };
+                
+                client.onerror = function(status) {
+                    log(`[ERROR] 客户端错误: ${status.message || '未知错误'}`);
+                    updateStatus('disconnected');
+                };
+                
+                client.onname = function(name) {
+                    log(`[INFO] 连接名称: ${name}`);
+                };
+                
+                client.onclipboard = function(stream, mimetype) {
+                    log(`[INFO] 收到剪贴板数据，类型: ${mimetype}`);
+                };
+                
+                // 将显示元素添加到容器
+                const displayContainer = document.getElementById('guacamole-display');
+                displayContainer.innerHTML = ''; // 清空容器
+                displayContainer.appendChild(client.getDisplay().getElement());
+                
+                // 启动连接
+                client.connect(connectionParams);
+                
+            } catch (error) {
+                log(`[ERROR] 连接失败: ${error.message}`);
+                updateStatus('disconnected');
+            }
+        }
+        
+        function disconnect() {
+            if (client) {
+                log('[INFO] 正在断开连接...');
+                client.disconnect();
+                client = null;
+            }
+            if (tunnel) {
+                tunnel.disconnect();
+                tunnel = null;
+            }
+            updateStatus('disconnected');
+        }
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            log('[INFO] 页面已加载，准备连接到Guacamole RDP服务');
+            updateStatus('disconnected');
+        });
+        
+        // 页面卸载时清理连接
+        window.addEventListener('beforeunload', function() {
+            if (client) {
+                client.disconnect();
+            }
+            if (tunnel) {
+                tunnel.disconnect();
+            }
+        });
+    </script>
+</body>
+</html> 

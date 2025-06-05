@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1748659768102702100",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-05-31T10:49:28.1051763+08:00",
+  "end_time": "2025-05-31T10:49:29.1751763+08:00",
+  "execution_time_ms": 1070,
+  "result_data": "{\"execution_time\":1070,\"exit_code\":0,\"metadata\":{\"command\":\"pwd\",\"protocol\":\"telnet_net\",\"target\":\"192.168.26.130:23\"},\"stderr\":\"\",\"stdout\":\" ____  _        ____ _                 _\\n| __ )(_) __ _ / ___| | ___  _   _  __| |\\n|  _ \\\\| |/ _` | |   | |/ _ \\\\| | | |/ _` |\\n| |_) | | (_| | |___| | (_) | |_| | (_| |\\n|____/|_|\\\\__, |\\\\____|_|\\\\___/ \\\\__,_|\\\\__,_|\\n         |___/\\n _____       _                       _            _     _\\n| ____|_ __ | |_ ___ _ __ _ __  _ __(_)___  ___  | |   (_)_ __  _   ___  __\\n|  _| | '_ \\\\| __/ _ \\\\ '__| '_ \\\\| '__| / __|/ _ \\\\ | |   | | '_ \\\\| | | \\\\ \\\\/ /\\n| |___| | | | ||  __/ |  | |_) | |  | \\\\__ \\\\  __/ | |___| | | | | |_| |\\u003e  \\u003c\\n|_____|_| |_|\\\\__\\\\___|_|  | .__/|_|  |_|___/\\\\___| |_____|_|_| |_|\\\\__,_/_/\\\\_\\\\\\n                         |_|\\n _____             _____       _              ____   ____      _  ___\\n|  ___|__  _ __   | ____|_   _| | ___ _ __   |___ \\\\ |___ \\\\    / |/ _ \\\\\\n| |_ / _ \\\\| '__|  |  _| | | | | |/ _ \\\\ '__|    __) |  __) |   | | | | |\\n|  _| (_) | |     | |__ | |_| | |  __/ |      / __/| / __/| _ | | |_| |\\n|_|  \\\\___/|_|     |_____|\\\\__,_|_|\\\\___|_|     |_____||_____|(_)|_|\\\\___/\\nWelcome to BigCloud Enterprise Linux For Euler 22.10 (GNU/Linux 5.10.0-60.70.0.94.oe2203.bclinux.x86_64 x86_64)\\nSystem information as of Sat May 31 10:49:30 CST 2025\\n  * System CPU load:\\t0.38 0.37 0.36        * System   uptime:\\t 10:49:30 up 4 days \\n  * Active sessions:\\t3                     * Memory    usage:\\t 258 / 7584 MB\\n  * Processes count:\\t490\\n  * Contact US   :\\n\\tMAIL : 4001100865@cmss.chinamobile.com / TEL : 4001-10086-5\\n247 packages can be updated.\\n0 updates are security updates.\\ntype 'yum check-update --security' to see details.\\nWelcome to 5.10.0-60.70.0.94.oe2203.bclinux.x86_64\\nSystem information as of time: \\tSat May 31 10:49:30 AM CST 2025\\nSystem load: \\t\\u001b[0;33;40m0.38\\u001b[0m\\nProcesses: \\t203\\nIP address: \\t192.168.26.130\\nIP address: \\t172.17.0.1\\nIP address: \\t172.18.0.1\\nIP address: \\t172.19.0.1\\nIP address: \\t172.20.0.1\\nIP address: \\t172.21.0.1\\nUsers online: \\t3\\n(base) [root@code-server ~]# /root\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1748659768",
+    "target": "192.168.26.130",
+    "username": "root"
+  }
+}

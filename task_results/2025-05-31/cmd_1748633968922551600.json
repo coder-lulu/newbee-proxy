@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1748633968922551600",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-05-31T03:39:28.9233595+08:00",
+  "end_time": "2025-05-31T03:39:29.7393595+08:00",
+  "execution_time_ms": 816,
+  "result_data": "{\"execution_time\":816,\"exit_code\":127,\"metadata\":{\"command\":\"adssdsad\",\"protocol\":\"ssh\",\"target\":\"192.168.26.130:22\"},\"stderr\":\"bash: line 1: adssdsad: command not found\\n\",\"stdout\":\"\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1748633968",
+    "target": "192.168.26.130",
+    "username": "root"
+  }
+}

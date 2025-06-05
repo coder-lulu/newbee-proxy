@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1749123583595297000",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-06-05T19:39:43.5982718+08:00",
+  "end_time": "2025-06-05T19:39:43.8632718+08:00",
+  "execution_time_ms": 265,
+  "result_data": "{\"execution_time\":265,\"exit_code\":0,\"metadata\":{\"command\":\"uname -a\",\"protocol\":\"ssh\",\"target\":\"192.168.26.131:22\"},\"stderr\":\"\",\"stdout\":\"Linux node-bc21 4.19.90-2107.6.0.0100.oe1.bclinux.x86_64 #1 SMP Wed Dec 1 19:59:44 CST 2021 x86_64 x86_64 x86_64 GNU/Linux\\n\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1749123583",
+    "target": "192.168.26.131",
+    "username": "root"
+  }
+}

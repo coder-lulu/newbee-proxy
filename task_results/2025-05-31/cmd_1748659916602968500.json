@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1748659916602968500",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-05-31T10:51:56.606173+08:00",
+  "end_time": "2025-05-31T10:51:57.533173+08:00",
+  "execution_time_ms": 927,
+  "result_data": "{\"execution_time\":926,\"exit_code\":0,\"metadata\":{\"command\":\"ip a\",\"protocol\":\"telnet_net\",\"target\":\"192.168.26.130:23\"},\"stderr\":\"\",\"stdout\":\"||_____|(_)|_|\\\\___/\\nWelcome to BigCloud Enterprise Linux For Euler 22.10 (GNU/Linux 5.10.0-60.70.0.94.oe2203.bclinux.x86_64 x86_64)\\nSystem information as of Sat May 31 10:51:59 CST 2025\\n  * System CPU load:\\t0.39 0.43 0.38        * System   uptime:\\t 10:51:59 up 4 days \\n  * Active sessions:\\t3                     * Memory    usage:\\t 284 / 7584 MB\\n  * Processes count:\\t478\\n  * Contact US   :\\n\\tMAIL : 4001100865@cmss.chinamobile.com / TEL : 4001-10086-5\\n247 packages can be updated.\\n0 updates are security updates.\\ntype 'yum check-update --security' to see details.\\nWelcome to 5.10.0-60.70.0.94.oe2203.bclinux.x86_64\\nSystem information as of time: \\tSat May 31 10:51:59 AM CST 2025\\nSystem load: \\t\\u001b[0;33;40m0.39\\u001b[0m\\nProcesses: \\t205\\nIP address: \\t192.168.26.130\\nIP address: \\t172.17.0.1\\nIP address: \\t172.18.0.1\\nIP address: \\t172.19.0.1\\nIP address: \\t172.20.0.1\\nIP address: \\t172.21.0.1\\nUsers online: \\t3\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1748659916",
+    "target": "192.168.26.130",
+    "username": "root"
+  }
+}

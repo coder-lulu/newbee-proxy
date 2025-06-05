@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1749054607300043600",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_FAILED",
+  "start_time": "2025-06-05T00:30:07.3005589+08:00",
+  "end_time": "2025-06-05T00:30:22.3125589+08:00",
+  "execution_time_ms": 15012,
+  "result_data": "",
+  "error_message": "net.Dial 失败 for 192.168.26.140:22: dial tcp 192.168.26.140:22: i/o timeout",
+  "metadata": {
+    "command_id": "cmd_1749054607",
+    "target": "192.168.26.140",
+    "username": "root"
+  }
+}

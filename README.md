@@ -30,6 +30,8 @@ cd newbee/newbee-proxy
 
 首次复制 `etc/proxy.yaml.example` 为 `etc/proxy.yaml`，设置 `OpsCenter`、`Security`、`Plugins`、`Network`、`Limits` 和 `Storage`。配置中的接入凭据需与运维中心匹配。示例 HTTP 端口为 `9001`，以配置为准。
 
+启用 SQLite 本地存储时，`Storage.DBPath` 指定的数据库（默认 `data/proxy.db`）由启动逻辑自动创建和迁移，不随源码分发。它仅保存代理任务、会话和 outbox，不替代平台的 MySQL 主数据库。
+
 当前入口使用 `conf.Load`，未启用环境变量展开；启动前必须将 `${...}` 占位符替换成实际本地值，不能仅通过 export 配置。密钥及真实运行配置不要提交。
 
 ```bash

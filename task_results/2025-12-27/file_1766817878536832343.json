@@ -1,0 +1,15 @@
+{
+  "task_id": "file_1766817878536832343",
+  "task_type": "FILE_TRANSFER",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-12-27T14:44:38.542727238+08:00",
+  "end_time": "2025-12-27T14:44:38.850727819+08:00",
+  "execution_time_ms": 308,
+  "result_data": "234 bytes",
+  "error_message": "",
+  "metadata": {
+    "command_id": "file_1766817878",
+    "target": "192.168.26.130",
+    "username": "test"
+  }
+}

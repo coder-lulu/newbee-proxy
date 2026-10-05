@@ -9,7 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"newbee-agent/plugins/common"
+    "github.com/coder-lulu/newbee-proxy/plugins/common"
+    metrics "github.com/coder-lulu/newbee-proxy/internal/metrics"
 )
 
 // SimpleLogger 简单的日志记录器实现
@@ -298,10 +299,18 @@ func (p *DbPluginImpl) ExecuteSQL(ctx context.Context, connectionId string, sql 
 		err = execErr
 	}
 
+	// 记录 Prom 指标
+	if info := dbConn.GetDbInfo(); info != nil {
+		metrics.ObserveDBExecSeconds(string(info.Type), string(sqlType), time.Since(startTime).Seconds())
+	}
+
 	if err != nil {
 		dbErr := WrapError(err, sql)
 		result.Error = dbErr.Error()
 		p.metrics.TotalErrors++
+		if info := dbConn.GetDbInfo(); info != nil {
+			metrics.IncDBExecError(string(info.Type), dbErr.Code)
+		}
 
 		// 记录错误日志
 		LogSQL("execute", connectionId, sql, time.Since(startTime), result.RowsAffected, dbErr, options.Operator)

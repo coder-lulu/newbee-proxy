@@ -1,0 +1,79 @@
+{
+  "info": {
+    "_postman_id": "d6d05390-4e98-4fa9-8d13-1137792e2c0e",
+    "name": "Newbee Proxy API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Newbee Proxy HTTP/WS APIs. 导入后请同时导入环境 Proxy.postman_environment.json，并设置 baseUrl（如 http://localhost:8889）。所有 url 使用简单字符串 {{baseUrl}}/path，避免 raw/url 对象在旧版本 Postman 的兼容问题。"
+  },
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        { "name": "Health", "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/health" } },
+        { "name": "Status", "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/status" } },
+        { "name": "Plugins", "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/plugins" } }
+      ]
+    },
+    {
+      "name": "Metrics",
+      "item": [
+        { "name": "Prometheus /metrics", "request": { "method": "GET", "url": "{{baseUrl}}/metrics" } },
+        { "name": "Metrics JSON /metrics.json", "request": { "method": "GET", "url": "{{baseUrl}}/metrics.json" } },
+        { "name": "pprof /debug/pprof/", "request": { "method": "GET", "url": "{{baseUrl}}/debug/pprof/" } }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "Submit Command",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "X-PSK", "value": "{{psk}}" } ],
+            "url": "{{baseUrl}}/api/task/command",
+            "body": { "mode": "raw", "raw": "{\n  \"task_id\": \"{{taskId}}\",\n  \"target\": \"{{sshHost}}\",\n  \"port\": {{sshPort}},\n  \"protocol\": \"ssh\",\n  \"username\": \"{{sshUser}}\",\n  \"password\": \"{{sshPass}}\",\n  \"command\": \"uname -a\",\n  \"timeout\": 30\n}" }
+          }
+        },
+        {
+          "name": "Submit Script",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "X-PSK", "value": "{{psk}}" } ],
+            "url": "{{baseUrl}}/api/task/script",
+            "body": { "mode": "raw", "raw": "{\n  \"task_id\": \"{{taskId}}\",\n  \"target\": \"{{sshHost}}\",\n  \"port\": {{sshPort}},\n  \"protocol\": \"ssh\",\n  \"username\": \"{{sshUser}}\",\n  \"password\": \"{{sshPass}}\",\n  \"script_content\": \"echo hello\",\n  \"script_type\": \"bash\",\n  \"timeout\": 30,\n  \"cleanup_after\": true\n}" }
+          }
+        },
+        {
+          "name": "File Transfer",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "X-PSK", "value": "{{psk}}" } ],
+            "url": "{{baseUrl}}/api/task/file",
+            "body": { "mode": "raw", "raw": "{\n  \"task_id\": \"{{taskId}}\",\n  \"target\": \"{{sshHost}}\",\n  \"port\": {{sshPort}},\n  \"protocol\": \"ssh\",\n  \"username\": \"{{sshUser}}\",\n  \"password\": \"{{sshPass}}\",\n  \"source_path\": \"/etc/hosts\",\n  \"target_path\": \"/tmp/hosts.copy\",\n  \"direction\": \"download\",\n  \"timeout\": 60\n}" }
+          }
+        },
+        { "name": "Cancel Task", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/task/cancel", "body": { "mode": "raw", "raw": "{\n  \"task_id\": \"{{taskId}}\"\n}" } } },
+        { "name": "Get Task Status", "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/task/status/{{taskId}}" } },
+        { "name": "Get Task Result", "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/task/result/{{taskId}}" } },
+        { "name": "List Active Tasks", "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/task/active" } },
+        { "name": "Task Stats", "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/task/stats" } },
+        { "name": "HTTP Task", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/task/http", "body": { "mode": "raw", "raw": "{\n  \"task_id\": \"{{taskId}}\",\n  \"request\": {\n    \"method\": \"GET\",\n    \"url\": \"https://httpbin.org/get\",\n    \"timeout\": \"10s\",\n    \"expect\": { \"status_in\": [200] }\n  }\n}" } } }
+      ]
+    },
+    {
+      "name": "Stream Helper",
+      "item": [
+        
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        { "name": "Get State", "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/admin/state" } },
+        { "name": "Set State (draining)", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/admin/state", "body": { "mode": "raw", "raw": "{\n  \"state\": \"draining\"\n}" } } },
+        { "name": "Drain", "request": { "method": "POST", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/admin/drain" } },
+        { "name": "Online", "request": { "method": "POST", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/admin/online" } }
+      ]
+    }
+  ]
+}

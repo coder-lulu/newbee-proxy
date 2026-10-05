@@ -1,0 +1,44 @@
+{
+  "info": {
+    "name": "Newbee Proxy - Diag",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "TCP",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/api/diag/tcp?host=127.0.0.1&port=22&timeout_ms=2000"
+      }
+    },
+    {
+      "name": "DNS",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/api/diag/dns?name=example.com&timeout_ms=2000"
+      }
+    },
+    {
+      "name": "TLS",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/api/diag/tls?host=example.com&port=443"
+      }
+    },
+    {
+      "name": "ICMP",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/api/diag/icmp?host=1.1.1.1&count=2&timeout_ms=1000"
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:9001" },
+    { "key": "psk", "value": "dev-psk" }
+  ]
+}

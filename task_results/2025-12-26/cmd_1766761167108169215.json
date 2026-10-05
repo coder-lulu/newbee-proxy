@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1766761167108169215",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-12-26T22:59:27.110045367+08:00",
+  "end_time": "2025-12-26T22:59:27.99704583+08:00",
+  "execution_time_ms": 887,
+  "result_data": "{\"execution_time\":887,\"exit_code\":0,\"metadata\":{\"command\":\"uname -a\",\"protocol\":\"ssh\",\"target\":\"192.168.26.130:22\"},\"stderr\":\"\",\"stdout\":\"Linux code-server 5.10.0-60.70.0.94.oe2203.bclinux.x86_64 #1 SMP Mon Dec 19 17:06:33 CST 2022 x86_64 x86_64 x86_64 GNU/Linux\\n\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1766761167",
+    "target": "192.168.26.130",
+    "username": "root"
+  }
+}

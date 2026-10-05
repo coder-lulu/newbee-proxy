@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"newbee-agent/plugins/common"
+    "github.com/coder-lulu/newbee-proxy/plugins/common"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

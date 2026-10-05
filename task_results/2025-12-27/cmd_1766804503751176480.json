@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1766804503751176480",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-12-27T11:01:43.751951984+08:00",
+  "end_time": "2025-12-27T11:01:45.88595223+08:00",
+  "execution_time_ms": 2134,
+  "result_data": "{\"execution_time\":2134,\"exit_code\":0,\"metadata\":{\"command\":\"pwd;sudo whoami;echo $FOO\",\"protocol\":\"ssh\",\"target\":\"192.168.26.130:22\"},\"stderr\":\"sudo: a terminal is required to read the password; either use the -S option to read from standard input or configure an askpass helper\\nsudo: a password is required\\n\",\"stdout\":\"/tmp\\n\\n\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1766804503",
+    "target": "192.168.26.130",
+    "username": "test"
+  }
+}

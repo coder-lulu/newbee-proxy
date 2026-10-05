@@ -33,3 +33,45 @@
 
 # VsCode debug files
 __debug*
+
+# Local caches, diagnostics, credentials and build products
+/logs/
+**/logs/
+*.log
+.gocache/
+.gomodcache/
+.cache/
+.pnpm-store/
+node_modules/
+.turbo/
+.output/
+.nitro/
+dist/
+coverage/
+.claude/settings.local.json
+.trae/
+.env.local
+.env.*.local
+*_dev.yaml
+*.pem
+*.key
+*.p12
+*.pfx
+*.exe
+*.test
+*.prof
+*.out
+
+/etc/proxy.yaml
+
+*.sql.gz
+
+*.db
+
+*.db-wal
+
+*.db-shm
+
+*.sqlite
+
+*.sqlite3

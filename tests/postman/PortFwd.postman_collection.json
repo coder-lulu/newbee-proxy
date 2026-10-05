@@ -1,0 +1,64 @@
+{
+  "info": {
+    "name": "Newbee Proxy - PortFwd",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Rule",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-PSK", "value": "{{psk}}" }
+        ],
+        "url": "{{baseUrl}}/api/portfwd/rules",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"rule-1\",\n  \"listen\": \"0.0.0.0:18080\",\n  \"target\": \"127.0.0.1:8080\",\n  \"protocol\": \"tcp\",\n  \"dial_timeout\": \"5s\",\n  \"idle_timeout\": \"300s\",\n  \"keepalive_seconds\": 30,\n  \"nodelay\": true,\n  \"max_conns\": 0\n}"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List Rules",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/api/portfwd/rules"
+      },
+      "response": []
+    },
+    {
+      "name": "Stop Rule",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/api/portfwd/rules/rule-1/stop"
+      },
+      "response": []
+    },
+    {
+      "name": "Start Rule",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/api/portfwd/rules/rule-1/start"
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Rule",
+      "request": {
+        "method": "DELETE",
+        "header": [ { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/api/portfwd/rules/rule-1"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:9001" },
+    { "key": "psk", "value": "dev-psk" }
+  ]
+}

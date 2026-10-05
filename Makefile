@@ -1,17 +1,17 @@
 # Custom configuration | 独立配置
 # Service name | 项目名称
-SERVICE=Agent
+SERVICE=NewbeeProxy
 # Service name in specific style | 项目经过style格式化的名称
-SERVICE_STYLE=agent
+SERVICE_STYLE=proxy
 # Service name in lowercase | 项目名称全小写格式
-SERVICE_LOWER=agent
+SERVICE_LOWER=proxy
 # Service name in snake format | 项目名称下划线格式
-SERVICE_SNAKE=agent
+SERVICE_SNAKE=proxy
 # Service name in snake format | 项目名称短杠格式
-SERVICE_DASH=agent
+SERVICE_DASH=proxy
 
 # The main module path | 主模块路径
-MAIN_MODULE_PATH=cmd/agent/main.go
+MAIN_MODULE_PATH=cmd/proxy.go
 
 # The project version, if you don't use git, you should set it manually | 项目版本，如果不使用git请手动设置
 VERSION=$(shell git describe --tags --always)
@@ -104,13 +104,17 @@ help: # Show help | 显示帮助
 .PHONY: gen-proto
 gen-proto:
 	@echo "生成protobuf代码..."
-	@cd proto && protoc --go_out=. --go-grpc_out=. agent.proto
+	@cd proto && \
+		protoc \
+			--go_out=paths=source_relative:. \
+			--go-grpc_out=paths=source_relative:. \
+			agent.proto
 	@echo "protobuf代码生成完成"
 
 .PHONY: run
 run:
-	@echo "启动Agent服务..."
-	@go run cmd/agent/main.go -f etc/agent.yaml
+	@echo "启动Newbee Proxy服务..."
+	@go run cmd/proxy.go -f etc/proxy.yaml
 
 .PHONY: clean
 clean:

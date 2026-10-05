@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1766817880553436360",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-12-27T14:44:40.555187003+08:00",
+  "end_time": "2025-12-27T14:44:40.799187592+08:00",
+  "execution_time_ms": 244,
+  "result_data": "{\"execution_time\":244,\"exit_code\":0,\"metadata\":{\"command\":\"ls -l /tmp/test_upload_dest.txt\",\"protocol\":\"ssh\",\"target\":\"192.168.26.130:0\"},\"stderr\":\"\",\"stdout\":\"-rw-rw-r-- 1 test test 234 Dec 27 03:30 /tmp/test_upload_dest.txt\\n\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1766817880",
+    "target": "192.168.26.130",
+    "username": "test"
+  }
+}

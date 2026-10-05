@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"newbee-agent/plugins/common"
+    "github.com/coder-lulu/newbee-proxy/plugins/common"
 
 	// SQLite驱动
 	_ "github.com/mattn/go-sqlite3"

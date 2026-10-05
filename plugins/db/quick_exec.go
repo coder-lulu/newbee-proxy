@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"newbee-agent/plugins/common"
+    "github.com/coder-lulu/newbee-proxy/plugins/common"
 )
 
 // QuickExec 一句话SQL执行器，提供简化的API接口

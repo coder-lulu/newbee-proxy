@@ -1,0 +1,50 @@
+{
+  "info": {
+    "name": "Newbee Proxy - WS (SSH/Telnet/RDP/VNC)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "WebSocket 握手示例。Postman 仅能建立简单 WS，不便于交互。建议使用 wscat 或脚本配合。本集合主要用于验证握手与鉴权。"
+  },
+  "item": [
+    {
+      "name": "SSH WebSocket",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/ws/ssh"
+      }
+    },
+    {
+      "name": "Telnet WebSocket",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/ws/telnet"
+      }
+    },
+    {
+      "name": "RDP WebSocket (Guacamole)",
+      "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/rdp/websocket" }
+    },
+    {
+      "name": "VNC WebSocket (Guacamole)",
+      "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/vnc/websocket" }
+    },
+    {
+      "name": "SSH WebSocket (Guacamole)",
+      "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/ssh/websocket" }
+    },
+    {
+      "name": "Telnet WebSocket (Guacamole)",
+      "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/telnet/websocket" }
+    },
+    {
+      "name": "DB WebSocket",
+      "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/db/websocket?connection_id={{connectionId}}" }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:9001" },
+    { "key": "psk", "value": "dev-psk" },
+    { "key": "connectionId", "value": "" }
+  ]
+}

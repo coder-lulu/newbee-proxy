@@ -1,0 +1,169 @@
+# Copy this file to proxy.yaml and configure local values or environment variables.
+## newbee-proxy 配置示例（带注释）
+## 说明：
+## - HTTP/WS 鉴权：已支持“JWT 或 PSK”统一鉴权。默认保护以下路径：
+##   /api/task/、/api/db/、/api/stream/task，以及各类 WS 握手路径。
+## - 两种典型部署：
+##   A) 全链路 JWT：开启 Security.JWT，Enforce=true；可不配置 PSK。
+##   B) 无 SSO 使用 PSK：关闭 JWT，配置 OpsCenter.PSK；HTTP 将强制校验 PSK。
+## - 受保护路径 ProtectedPaths：若配置将覆盖默认列表，请确保包含 WS 握手路径！
+
+Name: proxy
+Host: 0.0.0.0
+Port: 9001
+
+Log:
+  ServiceName: newbee-proxy
+  Mode: console
+  Level: info
+
+
+Limits:
+  MaxConcurrentSessions: 1000
+  MaxMemoryMB: 2048
+  MaxCPUPercent: 80
+  SessionTimeoutSeconds: 3600
+
+Plugins:
+  SSH: { MaxConnections: 100, KeepAliveInterval: 30, ConnectionTimeout: 30 }
+  Telnet: { MaxConnections: 50, ConnectionTimeout: 30 }
+  RDP:
+    MaxConnections: 20
+    ConnectionTimeout: 60
+    Guacd:
+      Address: "192.168.26.130:4822"
+      Fallbacks: ["127.0.0.1:4822", "192.168.26.130:4822"]
+      ConnectTimeout: 10s
+      HealthCheckInterval: 30s
+    Connection:
+      DefaultWidth: 1920
+      DefaultHeight: 1080
+      ColorDepth: 32
+      DPI: 96
+
+  ## HTTP 插件默认配置（已在代码中支持注入）。
+  HTTP:
+    MaxIdleConns: 200
+    MaxIdleConnsPerHost: 20
+    IdleConnTimeout: 90s
+    DefaultTimeout: 30s
+    Retry: { Max: 2, BaseDelay: 200ms, MaxDelay: 2s, RetryOn5xx: true, RetryOnNetworkError: true, RetryOnCodes: [429] }
+    AllowedHosts: []
+    BlockedHosts: []
+    Parallelism: { Global: 100, PerHost: 20 }
+    Proxy: { HTTPProxy: "", HTTPSProxy: "", NoProxy: "" }
+    TLS: { InsecureSkipVerify: false, PinnedCerts: [] }
+    CircuitBreaker: { FailureLimit: 0, Timeout: 0s }
+
+  ## DB 插件默认配置（当前实现读取 MaxConnections/Timeout）
+  DB:
+    MaxConnections: 50
+    Timeout: 30
+
+  ## SNMP 插件默认配置（v2c/v3 请求通过 /api/snmp/* 调用）
+  ## - 这里的配置作为缺省值，实际请求体可覆盖（target/port/timeout/credentials 等）。
+  ## - Version: v2c 或 v3；Community 仅对 v2c 生效；Timeout 单位秒。
+  SNMP:
+    Version: v2c
+    Community: public
+    Timeout: 3
+
+  ## PortForward 插件默认配置（规则仍以 API JSON 为准，此处提供默认值参考）。
+  PortForward:
+    Default:
+      DialTimeout: 5s
+      IdleTimeout: 300s
+      KeepAliveSec: 30
+      NoDelay: true
+      MaxConns: 0
+
+  ## 端口转发插件（最小可用：TCP 本地转发）。如无需要，可保持为空。
+  ## 说明：
+  ## - 规则通过 API 动态创建/启动/停止/删除（POST/DELETE /api/portfwd/rules）。
+  ## - 下方为默认参数示例，真实规则以 API 的 JSON 体为准。
+  ## - 并发/容量治理：MaxConns（每规则最大活动连接数，0 为不限）。
+  ## - IdleTimeout：空闲超时，超过将关闭连接（示例 300s）。
+  ## - KeepAliveSec：TCP keepalive 周期（秒）。
+  ##
+  ## 示例（供参考，不会自动创建规则）：
+  ## PortForward:
+  ##   Default:
+  ##     DialTimeout: 5s
+  ##     IdleTimeout: 300s
+  ##     KeepAliveSec: 30
+  ##     NoDelay: true
+  ##     MaxConns: 0   # 0 表示不限
+  ##   Notes:
+  ##     - 通过 API 创建规则：
+  ##         POST /api/portfwd/rules
+  ##         {
+  ##           "id": "rule-1",
+  ##           "listen": "0.0.0.0:18080",
+  ##           "target": "127.0.0.1:8080",
+  ##           "protocol": "tcp",
+  ##           "dial_timeout": "5s",
+  ##           "idle_timeout": "300s",
+  ##           "keepalive_seconds": 30,
+  ##           "nodelay": true,
+  ##           "max_conns": 0
+  ##         }
+
+Heartbeat: { Interval: 30, Timeout: 10, RetryCount: 3 }
+
+Network:
+  LocalIP: 0.0.0.0
+  PublicIP: 0.0.0.0
+  NetworkSegments: ["192.168.1.0/24", "10.0.0.0/8"]
+
+Security:
+  EnableTLS: false
+  CertFile: ""
+  KeyFile: ""
+  CAFile: ""
+  SkipVerify: true
+  ## JWT 鉴权（模式 A：全链路 JWT）
+  ## - Enabled=true 且 Enforce=true：严格要求 Authorization: Bearer <token>
+  ## - AllowQueryToken=true 用于兼容 ?token= 传参（仅建议在测试环境开启）
+  JWT: { Enabled: true, Secret: "dev-secret", AllowQueryToken: true, Enforce: false }
+
+  ## 鉴权策略：默认所有接口均需认证（JWT 或 PSK）。
+  ## 如需跳过鉴权（例如健康/探活自检），请在 SkipPaths 中显式列出。
+  ## 示例：
+  ## SkipPaths:
+  ##   - "/health"
+  ##   - "/status"
+  ##   - "/metrics"
+  SkipPaths: []
+
+  OriginWhitelist: ["http://localhost:5173", "http://127.0.0.1:5173"]
+  RateLimit: { Enabled: true, RequestsPerSecond: 50, Burst: 50 }
+
+OpsCenter:
+  Enabled: true
+  Endpoints: ["http://127.0.0.1:9601"]
+  HeartbeatSeconds: 30
+  WorkerID: "proxy-worker-001"
+  Region: "cn-beijing"
+  Zone: "az-1"
+  ## PSK（可与 JWT 并存；在 HTTP 中作为 JWT 失败的回退；关闭 JWT 时将强制 PSK）
+  PSK: "dev-psk"
+  HealthCheckURL: "/health"
+  Tags: ["production", "high-performance"]
+  Labels: { env: "production", team: "ops" }
+
+# Grpc: { Enabled: true, ListenOn: ":9000" }
+
+## 本地存储（SQLite，纯 Go 驱动，无需 CGO）
+## - EnableSQLite: true 时启用本地任务/会话/outbox 持久化
+## - RetentionDays/MaxSizeMB 用于 GC 与容量控制；触发删除时自动执行 VACUUM
+Storage:
+  EnableSQLite: true
+  DBPath: "data/proxy.db"
+  MaxSizeMB: 1024       # 数据库文件上限（MB），0 表示不限制
+  RetentionDays: 7      # 保留天数，0 表示不限制
+
+## 切换指南：
+## - 模式 A（全链路 JWT）：
+##   Security.JWT.Enabled=true，Security.JWT.Enforce=true；可不配置 OpsCenter.PSK
+## - 模式 B（仅 PSK）：
+##   Security.JWT.Enabled=false 或去掉 JWT，设置 OpsCenter.PSK；所有受保护路径将要求 X-PSK/X-OPS-PSK 或 ?psk=

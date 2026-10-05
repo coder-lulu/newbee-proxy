@@ -33,7 +33,7 @@ plugins/common/
 
 **使用示例：**
 ```go
-import "newbee-agent/plugins/common/timeout"
+import "github.com/coder-lulu/newbee-proxy/plugins/common/timeout"
 
 // 创建超时控制器
 config := timeout.DefaultTimeoutConfig()
@@ -62,7 +62,7 @@ defer cancel()
 
 **使用示例：**
 ```go
-import "newbee-agent/plugins/common/websocket"
+import "github.com/coder-lulu/newbee-proxy/plugins/common/websocket"
 
 // 创建WebSocket管理器
 wsConfig := websocket.DefaultWebSocketConfig()
@@ -101,7 +101,7 @@ conn.SendJSON(map[string]interface{}{
 
 **使用示例：**
 ```go
-import "newbee-agent/plugins/common/connection"
+import "github.com/coder-lulu/newbee-proxy/plugins/common/connection"
 
 // 创建连接管理器
 config := connection.DefaultManagerConfig()
@@ -144,7 +144,7 @@ manager.SetEventHandlers(
 
 **使用示例：**
 ```go
-import "newbee-agent/plugins/common/metrics"
+import "github.com/coder-lulu/newbee-proxy/plugins/common/metrics"
 
 // 创建指标收集器
 collector := metrics.NewMetricsCollector()
@@ -172,10 +172,10 @@ connectionMetrics := collector.GetConnectionMetrics()
 1. **导入框架包**：
 ```go
 import (
-    "newbee-agent/plugins/common/timeout"
-    "newbee-agent/plugins/common/websocket"
-    "newbee-agent/plugins/common/connection"
-    "newbee-agent/plugins/common/metrics"
+    "github.com/coder-lulu/newbee-proxy/plugins/common/timeout"
+    "github.com/coder-lulu/newbee-proxy/plugins/common/websocket"
+    "github.com/coder-lulu/newbee-proxy/plugins/common/connection"
+    "github.com/coder-lulu/newbee-proxy/plugins/common/metrics"
 )
 ```
 

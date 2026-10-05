@@ -1,0 +1,15 @@
+{
+  "task_id": "script_1766817407858758185",
+  "task_type": "SCRIPT_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-12-27T14:36:47.859837622+08:00",
+  "end_time": "2025-12-27T14:36:48.485838243+08:00",
+  "execution_time_ms": 626,
+  "result_data": "{\"execution_time\":474,\"exit_code\":0,\"metadata\":{\"protocol\":\"ssh\",\"script_type\":\"bash\",\"target\":\"192.168.26.130:0\",\"upload_time_ms\":\"233.62\"},\"remote_file_path\":\"/tmp/script_1766817407858758185_1766817408.sh\",\"stderr\":\"\",\"stdout\":\"Hello from script running on code-server\\nCurrent user: test\\n\",\"upload_time\":233}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "script_1766817407",
+    "target": "192.168.26.130",
+    "username": "test"
+  }
+}

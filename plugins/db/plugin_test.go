@@ -3,7 +3,7 @@ package db
 import (
 	"testing"
 
-	"newbee-agent/plugins/common"
+    "github.com/coder-lulu/newbee-proxy/plugins/common"
 )
 
 // TestDbPlugin 测试数据库插件基本功能

@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1766748806391538253",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_FAILED",
+  "start_time": "2025-12-26T19:33:26.394205517+08:00",
+  "end_time": "2025-12-26T19:33:29.185205852+08:00",
+  "execution_time_ms": 2791,
+  "result_data": "",
+  "error_message": "连接SSH服务器失败: ssh: handshake failed: ssh: unable to authenticate, attempted methods [none password], no supported methods remain",
+  "metadata": {
+    "command_id": "cmd_1766748806",
+    "target": "192.168.26.151",
+    "username": "root"
+  }
+}

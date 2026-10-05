@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"newbee-agent/internal/svc"
-	"newbee-agent/plugins/common"
-	"newbee-agent/plugins/db"
+    "github.com/coder-lulu/newbee-proxy/internal/svc"
+    "github.com/coder-lulu/newbee-proxy/plugins/common"
+    "github.com/coder-lulu/newbee-proxy/plugins/db"
 
 	"github.com/gorilla/websocket"
 	"github.com/zeromicro/go-zero/core/logx"

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"newbee-agent/plugins/common"
+    "github.com/coder-lulu/newbee-proxy/plugins/common"
 	// Oracle驱动 - godror是Go的Oracle驱动
 	// _ "github.com/godror/godror" // 注释掉Oracle驱动以避免编译问题
 )

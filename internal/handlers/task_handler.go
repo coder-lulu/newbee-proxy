@@ -1,16 +1,16 @@
 package handlers
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"os"
-	"strings"
-	"time"
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "os"
+    "strings"
+    "time"
 
-	"newbee-agent/internal/svc"
-	"newbee-agent/internal/types"
-	pb "newbee-agent/proto/agent"
+    "github.com/coder-lulu/newbee-proxy/internal/svc"
+    "github.com/coder-lulu/newbee-proxy/internal/types"
+    pb "github.com/coder-lulu/newbee-proxy/internal/types"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -65,11 +65,42 @@ type ScriptExecuteRequest struct {
 	CleanupAfter   bool              `json:"cleanup_after"`    // 执行后清理
 }
 
+// FileTransferRequest 文件传输请求
+type FileTransferRequest struct {
+	Target     string `json:"target"`      // 目标主机
+	Port       int32  `json:"port"`        // 端口
+	Protocol   string `json:"protocol"`    // 协议 (ssh/sftp)
+	Username   string `json:"username"`    // 用户名
+	Password   string `json:"password"`    // 密码
+	PrivateKey string `json:"private_key"` // 私钥
+	SourcePath string `json:"source_path"` // 源路径
+	TargetPath string `json:"target_path"` // 目标路径
+	Direction  string `json:"direction"`   // 方向 (upload/download)
+	Timeout    int32  `json:"timeout"`     // 超时时间(秒)
+}
+
 // TaskResponse 任务响应
 type TaskResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
-	TaskID  string `json:"task_id"`
+    Success bool   `json:"success"`
+    Message string `json:"message"`
+    TaskID  string `json:"task_id"`
+}
+
+// HTTPTaskRequest 复用 HTTP 插件的请求模型
+type HTTPTaskRequest struct {
+    Method      string            `json:"method"`
+    URL         string            `json:"url"`
+    PathParams  map[string]string `json:"path_params"`
+    Query       map[string]string `json:"query"`
+    Headers     map[string]string `json:"headers"`
+    Auth        map[string]any    `json:"auth"`
+    BodyType    string            `json:"body_type"`
+    Body        any               `json:"body"`
+    Timeout     string            `json:"timeout"`
+    Retry       map[string]any    `json:"retry"`
+    Expect      map[string]any    `json:"expect"`
+    SaveToFile  bool              `json:"save_to_file"`
+    FileName    string            `json:"file_name"`
 }
 
 // ExecuteCommand 执行命令
@@ -136,7 +167,7 @@ func (h *TaskHandler) ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 创建gRPC任务
+    // 构建任务（内部类型，非 gRPC）
 	task := &pb.TaskAssignment{
 		TaskId:     taskID,
 		CommandId:  fmt.Sprintf("cmd_%d", time.Now().Unix()),
@@ -248,7 +279,7 @@ func (h *TaskHandler) ExecuteScript(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 创建gRPC任务
+    // 构建任务（内部类型，非 gRPC）
 	task := &pb.TaskAssignment{
 		TaskId:     taskID,
 		CommandId:  fmt.Sprintf("script_%d", time.Now().Unix()),
@@ -283,6 +314,143 @@ func (h *TaskHandler) ExecuteScript(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ExecuteHTTP 提交 HTTP 请求任务（异步）
+func (h *TaskHandler) ExecuteHTTP(w http.ResponseWriter, r *http.Request) {
+    var req HTTPTaskRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        h.sendError(w, http.StatusBadRequest, "请求参数解析失败: %v", err)
+        return
+    }
+    if req.URL == "" || req.Method == "" {
+        h.sendError(w, http.StatusBadRequest, "缺少必要参数: method, url")
+        return
+    }
+
+    taskID := fmt.Sprintf("http_%d", time.Now().UnixNano())
+    payloadBytes, err := json.Marshal(req)
+    if err != nil {
+        h.sendError(w, http.StatusInternalServerError, "构建任务载荷失败: %v", err)
+        return
+    }
+
+    task := &pb.TaskAssignment{
+        TaskId:         taskID,
+        CommandId:      fmt.Sprintf("http_%d", time.Now().Unix()),
+        TaskType:       pb.TaskType("http_request"),
+        Target:         req.URL,
+        TargetPort:     0,
+        Credentials:    nil,
+        Payload:        string(payloadBytes),
+        TimeoutSeconds: 0,
+        Priority:       3,
+        Options:        map[string]string{"protocol": "http"},
+    }
+
+    if err := h.svcCtx.TaskExecutor.SubmitTask(task); err != nil {
+        h.sendError(w, http.StatusInternalServerError, "提交任务失败: %v", err)
+        return
+    }
+    h.sendResponse(w, TaskResponse{ Success: true, Message: "HTTP 请求任务已提交", TaskID: taskID })
+}
+
+// ExecuteFileTransfer 执行文件传输
+func (h *TaskHandler) ExecuteFileTransfer(w http.ResponseWriter, r *http.Request) {
+	var req FileTransferRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.sendError(w, http.StatusBadRequest, "请求参数解析失败: %v", err)
+		return
+	}
+
+	// 验证必要参数
+	if req.Target == "" || req.Username == "" || req.SourcePath == "" || req.TargetPath == "" {
+		h.sendError(w, http.StatusBadRequest, "缺少必要参数: target, username, source_path, target_path")
+		return
+	}
+
+	if req.Password == "" && req.PrivateKey == "" {
+		h.sendError(w, http.StatusBadRequest, "必须提供password或private_key")
+		return
+	}
+
+	if req.Direction != "upload" && req.Direction != "download" {
+		h.sendError(w, http.StatusBadRequest, "direction必须为upload或download")
+		return
+	}
+
+	// 生成任务ID
+	taskID := fmt.Sprintf("file_%d", time.Now().UnixNano())
+
+	// 确定协议，默认为ssh
+	protocol := req.Protocol
+	if protocol == "" {
+		protocol = "ssh"
+	}
+
+	// 构建任务载荷
+	ftReq := types.FileTransferRequest{
+		TaskID:     taskID,
+		Target:     req.Target,
+		Port:       req.Port,
+		Protocol:   protocol,
+		Username:   req.Username,
+		Password:   req.Password,
+		PrivateKey: req.PrivateKey,
+		SourcePath: req.SourcePath,
+		TargetPath: req.TargetPath,
+		Direction:  req.Direction,
+		Timeout:    req.Timeout,
+	}
+
+	// 设置默认值
+	if ftReq.Port == 0 {
+		ftReq.Port = 22 // ssh默认端口
+	}
+	if ftReq.Timeout == 0 {
+		ftReq.Timeout = 600 // 默认10分钟超时
+	}
+
+	// 转换为JSON载荷
+	payloadBytes, err := json.Marshal(ftReq)
+	if err != nil {
+		h.sendError(w, http.StatusInternalServerError, "构建任务载荷失败: %v", err)
+		return
+	}
+
+    // 构建任务（内部类型，非 gRPC）
+	task := &pb.TaskAssignment{
+		TaskId:     taskID,
+		CommandId:  fmt.Sprintf("file_%d", time.Now().Unix()),
+		TaskType:   pb.TaskType_FILE_TRANSFER,
+		Target:     req.Target,
+		TargetPort: req.Port,
+		Credentials: &pb.Credentials{
+			Username:   req.Username,
+			Password:   req.Password,
+			PrivateKey: req.PrivateKey,
+			AuthMethod: "password",
+		},
+		Payload:        string(payloadBytes),
+		TimeoutSeconds: req.Timeout,
+		Priority:       3,
+		Options:        map[string]string{"protocol": protocol},
+	}
+
+	// 提交任务
+	if err := h.svcCtx.TaskExecutor.SubmitTask(task); err != nil {
+		h.sendError(w, http.StatusInternalServerError, "提交任务失败: %v", err)
+		return
+	}
+
+	h.logger.Infof("文件传输任务已提交 - TaskID: %s, Target: %s, Direction: %s, Source: %s",
+		taskID, req.Target, req.Direction, req.SourcePath)
+
+	h.sendResponse(w, TaskResponse{
+		Success: true,
+		Message: "文件传输任务已提交",
+		TaskID:  taskID,
+	})
+}
+
 // GetTaskStatus 获取任务状态
 func (h *TaskHandler) GetTaskStatus(w http.ResponseWriter, r *http.Request) {
 	// 从URL路径中提取taskId (go-zero正确方式)
@@ -305,14 +473,14 @@ func (h *TaskHandler) GetTaskStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]interface{}{
-		"task_id":     taskInfo.TaskID,
-		"task_type":   taskInfo.TaskType.String(),
-		"status":      string(taskInfo.Status),
-		"start_time":  taskInfo.StartTime.Format(time.RFC3339),
-		"update_time": taskInfo.UpdateTime.Format(time.RFC3339),
-		"duration":    time.Since(taskInfo.StartTime).Milliseconds(),
-	}
+    response := map[string]interface{}{
+        "task_id":     taskInfo.TaskID,
+        "task_type":   string(taskInfo.TaskType),
+        "status":      string(taskInfo.Status),
+        "start_time":  taskInfo.StartTime.Format(time.RFC3339),
+        "update_time": taskInfo.UpdateTime.Format(time.RFC3339),
+        "duration":    time.Since(taskInfo.StartTime).Milliseconds(),
+    }
 
 	h.sendResponse(w, response)
 }
@@ -323,14 +491,14 @@ func (h *TaskHandler) GetActiveTasks(w http.ResponseWriter, r *http.Request) {
 
 	tasks := make([]map[string]interface{}, 0, len(activeTasks))
 	for _, taskInfo := range activeTasks {
-		tasks = append(tasks, map[string]interface{}{
-			"task_id":     taskInfo.TaskID,
-			"task_type":   taskInfo.TaskType.String(),
-			"status":      string(taskInfo.Status),
-			"start_time":  taskInfo.StartTime.Format(time.RFC3339),
-			"update_time": taskInfo.UpdateTime.Format(time.RFC3339),
-			"duration":    time.Since(taskInfo.StartTime).Milliseconds(),
-		})
+        tasks = append(tasks, map[string]interface{}{
+            "task_id":     taskInfo.TaskID,
+            "task_type":   string(taskInfo.TaskType),
+            "status":      string(taskInfo.Status),
+            "start_time":  taskInfo.StartTime.Format(time.RFC3339),
+            "update_time": taskInfo.UpdateTime.Format(time.RFC3339),
+            "duration":    time.Since(taskInfo.StartTime).Milliseconds(),
+        })
 	}
 
 	response := map[string]interface{}{
@@ -375,33 +543,33 @@ func (h *TaskHandler) GetTaskResult(w http.ResponseWriter, r *http.Request) {
 		h.logger.Errorf("加载任务结果文件失败 - TaskID: %s, Error: %v", taskID, err)
 
 		// 如果文件读取失败，返回基本信息
-		response := map[string]interface{}{
-			"task_id":       taskInfo.TaskID,
-			"task_type":     taskInfo.TaskType.String(),
-			"status":        string(taskInfo.Status),
-			"start_time":    taskInfo.StartTime.Format(time.RFC3339),
-			"update_time":   taskInfo.UpdateTime.Format(time.RFC3339),
-			"duration":      time.Since(taskInfo.StartTime).Milliseconds(),
-			"result_status": taskInfo.ResultStatus,
-			"error_message": taskInfo.ErrorMessage,
-			"has_result":    taskInfo.HasResult,
-			"note":          "详细结果文件不可用，仅显示基本信息",
-		}
+        response := map[string]interface{}{
+            "task_id":       taskInfo.TaskID,
+            "task_type":     string(taskInfo.TaskType),
+            "status":        string(taskInfo.Status),
+            "start_time":    taskInfo.StartTime.Format(time.RFC3339),
+            "update_time":   taskInfo.UpdateTime.Format(time.RFC3339),
+            "duration":      time.Since(taskInfo.StartTime).Milliseconds(),
+            "result_status": taskInfo.ResultStatus,
+            "error_message": taskInfo.ErrorMessage,
+            "has_result":    taskInfo.HasResult,
+            "note":          "详细结果文件不可用，仅显示基本信息",
+        }
 		h.sendResponse(w, response)
 		return
 	}
 
 	// 构建完整的结果响应
-	response := map[string]interface{}{
-		"task_id":       taskInfo.TaskID,
-		"task_type":     taskInfo.TaskType.String(),
-		"status":        string(taskInfo.Status),
-		"start_time":    taskInfo.StartTime.Format(time.RFC3339),
-		"update_time":   taskInfo.UpdateTime.Format(time.RFC3339),
-		"duration":      time.Since(taskInfo.StartTime).Milliseconds(),
-		"result_status": taskInfo.ResultStatus,
-		"error_message": taskInfo.ErrorMessage,
-		"has_result":    taskInfo.HasResult,
+    response := map[string]interface{}{
+        "task_id":       taskInfo.TaskID,
+        "task_type":     string(taskInfo.TaskType),
+        "status":        string(taskInfo.Status),
+        "start_time":    taskInfo.StartTime.Format(time.RFC3339),
+        "update_time":   taskInfo.UpdateTime.Format(time.RFC3339),
+        "duration":      time.Since(taskInfo.StartTime).Milliseconds(),
+        "result_status": taskInfo.ResultStatus,
+        "error_message": taskInfo.ErrorMessage,
+        "has_result":    taskInfo.HasResult,
 
 		// 详细结果信息
 		"detailed_result": map[string]interface{}{
@@ -459,7 +627,7 @@ func (h *TaskHandler) GetTaskStats(w http.ResponseWriter, r *http.Request) {
 
 	for _, taskInfo := range activeTasks {
 		statusCount[string(taskInfo.Status)]++
-		typeCount[taskInfo.TaskType.String()]++
+        typeCount[string(taskInfo.TaskType)]++
 		totalDuration += time.Since(taskInfo.StartTime).Milliseconds()
 	}
 
@@ -489,6 +657,35 @@ func (h *TaskHandler) GetTaskStats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.sendResponse(w, response)
+}
+
+// CancelTask 取消任务（HTTP 管理面辅助接口）
+func (h *TaskHandler) CancelTask(w http.ResponseWriter, r *http.Request) {
+	type cancelReq struct {
+		TaskID string `json:"task_id"`
+	}
+	var req cancelReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.sendError(w, http.StatusBadRequest, "请求参数解析失败: %v", err)
+		return
+	}
+	if req.TaskID == "" {
+		h.sendError(w, http.StatusBadRequest, "缺少task_id参数")
+		return
+	}
+
+	cancelled, err := h.svcCtx.TaskExecutor.CancelTask(req.TaskID)
+	if err != nil {
+		h.sendError(w, http.StatusBadRequest, "取消任务失败: %v", err)
+		return
+	}
+
+	h.sendResponse(w, map[string]interface{}{
+		"success":   true,
+		"cancelled": cancelled,
+		"task_id":   req.TaskID,
+		"message":   "取消已受理",
+	})
 }
 
 // sendResponse 发送成功响应

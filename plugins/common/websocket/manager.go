@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"newbee-agent/plugins/common/timeout"
+    "github.com/coder-lulu/newbee-proxy/plugins/common/timeout"
 
 	"github.com/gorilla/websocket"
 )

@@ -1,0 +1,64 @@
+{
+  "info": {
+    "name": "Newbee Proxy - DB",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "数据库插件 REST 接口：连接测试、创建连接、执行 SQL、元数据查询、断开、状态。WS 执行请参考 WS 集合。"
+  },
+  "item": [
+    {
+      "name": "Test Connection",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/api/db/test",
+        "body": { "mode": "raw", "raw": "{\n  \"type\": \"mysql\",\n  \"host\": \"127.0.0.1\",\n  \"port\": 3306,\n  \"database\": \"test\",\n  \"username\": \"root\",\n  \"password\": \"root\",\n  \"ssl_mode\": \"\",\n  \"timeout\": 5\n}" }
+      }
+    },
+    {
+      "name": "Create Connection",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/api/db/connect",
+        "body": { "mode": "raw", "raw": "{\n  \"type\": \"mysql\",\n  \"host\": \"127.0.0.1\",\n  \"port\": 3306,\n  \"database\": \"test\",\n  \"username\": \"root\",\n  \"password\": \"root\",\n  \"ssl_mode\": \"\",\n  \"timeout\": 5\n}" }
+      }
+    },
+    {
+      "name": "Execute SQL",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/api/db/execute",
+        "body": { "mode": "raw", "raw": "{\n  \"connection_id\": \"{{connectionId}}\",\n  \"sql\": \"SELECT 1 as n\",\n  \"max_rows\": 100,\n  \"timeout\": 10\n}" }
+      }
+    },
+    {
+      "name": "Get Databases",
+      "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/db/databases?connection_id={{connectionId}}" }
+    },
+    {
+      "name": "Get Tables",
+      "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/db/tables?connection_id={{connectionId}}&database={{database}}" }
+    },
+    {
+      "name": "Get Table Info",
+      "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/db/table/info?connection_id={{connectionId}}&database={{database}}&table={{table}}" }
+    },
+    {
+      "name": "Disconnect",
+      "request": { "method": "DELETE", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/db/disconnect?connection_id={{connectionId}}" }
+    },
+    {
+      "name": "Stats",
+      "request": { "method": "GET", "header": [ { "key": "X-PSK", "value": "{{psk}}" } ], "url": "{{baseUrl}}/api/db/stats" }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:9001" },
+    { "key": "psk", "value": "dev-psk" },
+    { "key": "connectionId", "value": "" },
+    { "key": "database", "value": "test" },
+    { "key": "table", "value": "" }
+  ]
+}
+

@@ -1,18 +1,20 @@
 package handlers
 
 import (
-	"context"
-	"fmt"
-	"net/http"
-	"strconv"
-	"sync"
-	"time"
+    "context"
+    "fmt"
+    "net/http"
+    "strconv"
+    "sync"
+    "time"
 
-	"newbee-agent/internal/svc"
-	"newbee-agent/plugins/guac"
-	"newbee-agent/plugins/ws"
+    "github.com/coder-lulu/newbee-proxy/internal/svc"
+    "github.com/coder-lulu/newbee-proxy/plugins/guac"
+    "github.com/coder-lulu/newbee-proxy/plugins/ws"
+    mctx "github.com/coder-lulu/newbee-proxy/internal/middleware"
 
 	"github.com/zeromicro/go-zero/core/logx"
+    "strings"
 )
 
 // GuacamoleWebSocketHandler 基于开源Guacamole实现的WebSocket处理器
@@ -37,29 +39,60 @@ func NewGuacamoleWebSocketHandler(svcCtx *svc.ServiceContext) *GuacamoleWebSocke
 
 // HandleGuacamoleWebSocket 处理WebSocket连接，完全基于开源方案
 func (h *GuacamoleWebSocketHandler) HandleGuacamoleWebSocket(w http.ResponseWriter, r *http.Request) {
-	// 使用现有的WebSocket升级器
-	conn, err := ws.Upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		h.logger.Errorf("WebSocket升级失败: %v", err)
-		return
-	}
+    // 维护窗口：拒绝新会话
+    if !h.svcCtx.IsAcceptingNew() {
+        w.Header().Set("Retry-After", "30")
+        http.Error(w, "Service Unavailable: draining", http.StatusServiceUnavailable)
+        return
+    }
+    // 在握手前执行鉴权与签名校验（与中间件配合）
+    expectedProto := pathToProto(r.URL.Path)
+    if ok, reason := mctx.VerifyWSRequest(r, expectedProto, h.svcCtx.Config.Security, h.svcCtx.Config.OpsCenter.PSK); !ok {
+        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    } else if reason != "ok" {
+        h.logger.Infof("WS auth in observe mode: %s", reason)
+    }
+
+    // 使用现有的WebSocket升级器
+    conn, err := ws.Upgrader.Upgrade(w, r, nil)
+    if err != nil {
+        h.logger.Errorf("WebSocket升级失败: %v", err)
+        return
+    }
 	defer conn.Close()
 
 	h.logger.Info("新的Guacamole WebSocket连接建立")
 
-	// 创建隧道连接
-	tunnel, err := h.connect(r)
-	if err != nil {
-		h.logger.Errorf("创建Guacamole隧道失败: %v", err)
-		return
-	}
-	defer tunnel.Close()
+    // 创建隧道连接
+    tunnel, err := h.connect(r)
+    if err != nil {
+        h.logger.Errorf("创建Guacamole隧道失败: %v", err)
+        if h.svcCtx != nil && h.svcCtx.AuditManager != nil {
+            if claims, ok := mctx.GetJWTClaims(r.Context()); ok {
+                h.svcCtx.AuditManager.LogWSError(r, "guac", r.URL.RawQuery, "", "", claims, err)
+            } else {
+                h.svcCtx.AuditManager.LogWSError(r, "guac", r.URL.RawQuery, "", "", nil, err)
+            }
+        }
+        return
+    }
+    defer tunnel.Close()
 
 	h.logger.Infof("Guacamole隧道创建成功，UUID: %s", tunnel.GetUUID())
 
-	// 启动双向数据传输
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
+    // 审计：连接建立
+    if h.svcCtx != nil && h.svcCtx.AuditManager != nil {
+        if claims, ok := mctx.GetJWTClaims(r.Context()); ok {
+            h.svcCtx.AuditManager.LogWSConnect(r, "guac", r.URL.RawQuery, "", tunnel.GetUUID(), claims)
+        } else {
+            h.svcCtx.AuditManager.LogWSConnect(r, "guac", r.URL.RawQuery, "", tunnel.GetUUID(), nil)
+        }
+    }
+
+    // 启动双向数据传输
+    ctx, cancel := context.WithCancel(r.Context())
+    defer cancel()
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -130,14 +163,14 @@ func (h *GuacamoleWebSocketHandler) HandleGuacamoleWebSocket(w http.ResponseWrit
 		}
 	}()
 
-	// 等待连接结束或超时
-	select {
-	case <-ctx.Done():
-		h.logger.Info("Guacamole WebSocket连接上下文取消")
-	case <-time.After(1 * time.Hour): // 设置最大连接时间为1小时
-		h.logger.Info("Guacamole WebSocket连接超时，强制关闭")
-		cancel()
-	}
+    // 等待连接结束或超时
+    select {
+    case <-ctx.Done():
+        h.logger.Info("Guacamole WebSocket连接上下文取消")
+    case <-time.After(1 * time.Hour): // 设置最大连接时间为1小时
+        h.logger.Info("Guacamole WebSocket连接超时，强制关闭")
+        cancel()
+    }
 
 	// 等待所有goroutine完成，但设置超时避免无限等待
 	done := make(chan struct{})
@@ -146,12 +179,21 @@ func (h *GuacamoleWebSocketHandler) HandleGuacamoleWebSocket(w http.ResponseWrit
 		close(done)
 	}()
 
-	select {
-	case <-done:
-		h.logger.Info("所有数据传输goroutine已完成")
-	case <-time.After(10 * time.Second):
-		h.logger.Errorf("等待goroutine完成超时，可能存在goroutine泄漏")
-	}
+    select {
+    case <-done:
+        h.logger.Info("所有数据传输goroutine已完成")
+    case <-time.After(10 * time.Second):
+        h.logger.Errorf("等待goroutine完成超时，可能存在goroutine泄漏")
+    }
+
+    // 审计：连接断开
+    if h.svcCtx != nil && h.svcCtx.AuditManager != nil {
+        if claims, ok := mctx.GetJWTClaims(r.Context()); ok {
+            h.svcCtx.AuditManager.LogWSDisconnect(r, "guac", r.URL.RawQuery, "", tunnel.GetUUID(), claims)
+        } else {
+            h.svcCtx.AuditManager.LogWSDisconnect(r, "guac", r.URL.RawQuery, "", tunnel.GetUUID(), nil)
+        }
+    }
 }
 
 // connect 创建到guacd的连接，使用开源的DoConnect函数
@@ -267,5 +309,21 @@ func (h *GuacamoleWebSocketHandler) GetTunnelUUID(w http.ResponseWriter, r *http
 
 // ServeHTTP 处理HTTP隧道请求（用于非WebSocket模式）
 func (h *GuacamoleWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.server.ServeHTTP(w, r)
+    h.server.ServeHTTP(w, r)
+}
+
+// pathToProto infers protocol from request path
+func pathToProto(p string) string {
+    switch {
+    case strings.Contains(p, "/api/ssh/websocket"):
+        return "ssh"
+    case strings.Contains(p, "/api/rdp/websocket"):
+        return "rdp"
+    case strings.Contains(p, "/api/vnc/websocket"):
+        return "vnc"
+    case strings.Contains(p, "/api/telnet/websocket"):
+        return "telnet"
+    default:
+        return ""
+    }
 }

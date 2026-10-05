@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"newbee-agent/plugins/common"
+    "github.com/coder-lulu/newbee-proxy/plugins/common"
 )
 
 // DbConnectionImpl 数据库连接实现

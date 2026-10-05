@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1766823583788835726",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-12-27T16:19:43.790248452+08:00",
+  "end_time": "2025-12-27T16:19:44.459248853+08:00",
+  "execution_time_ms": 669,
+  "result_data": "{\"execution_time\":669,\"exit_code\":0,\"metadata\":{\"command\":\"pwd;whoami;echo $FOO\",\"protocol\":\"ssh\",\"target\":\"192.168.26.130:22\"},\"stderr\":\"sudo: a password is required\\n\",\"stdout\":\"/tmp\\ntest\\n || sudo -S -p '' bash -lc __NB_SUDO__ export FOO=bar\\n/tmp\\ntest\\n\\n\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1766823583",
+    "target": "192.168.26.130",
+    "username": "test"
+  }
+}

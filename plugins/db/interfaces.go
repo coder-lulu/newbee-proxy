@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 
-	"newbee-agent/plugins/common"
+    "github.com/coder-lulu/newbee-proxy/plugins/common"
 )
 
 // DbPlugin 数据库插件接口

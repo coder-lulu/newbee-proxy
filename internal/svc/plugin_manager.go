@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"sync"
 
-	"newbee-agent/internal/config"
-	"newbee-agent/plugins/common"
-	"newbee-agent/plugins/db"
-	"newbee-agent/plugins/rdp"
-	"newbee-agent/plugins/ssh"
+    "github.com/coder-lulu/newbee-proxy/internal/config"
+    "github.com/coder-lulu/newbee-proxy/plugins/common"
+    "github.com/coder-lulu/newbee-proxy/plugins/db"
+    "github.com/coder-lulu/newbee-proxy/plugins/rdp"
+    "github.com/coder-lulu/newbee-proxy/plugins/ssh"
+    httpplugin "github.com/coder-lulu/newbee-proxy/plugins/http"
+    portfwd "github.com/coder-lulu/newbee-proxy/plugins/portfwd"
+    snmpplugin "github.com/coder-lulu/newbee-proxy/plugins/snmp"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -238,10 +241,25 @@ func (pm *PluginManager) loadBuiltinPlugins() error {
 		return fmt.Errorf("failed to load RDP plugin: %w", err)
 	}
 
-	// 加载DB插件
-	if err := pm.loadDbPlugin(); err != nil {
-		return fmt.Errorf("failed to load DB plugin: %w", err)
-	}
+    // 加载DB插件
+    if err := pm.loadDbPlugin(); err != nil {
+        return fmt.Errorf("failed to load DB plugin: %w", err)
+    }
+
+    // 加载HTTP插件
+    if err := pm.loadHTTPPlugin(); err != nil {
+        return fmt.Errorf("failed to load HTTP plugin: %w", err)
+    }
+
+    // 加载端口转发插件
+    if err := pm.loadPortFwdPlugin(); err != nil {
+        return fmt.Errorf("failed to load PortFwd plugin: %w", err)
+    }
+
+    // 加载 SNMP 插件（默认启用）
+    if err := pm.loadSNMPPlugin(); err != nil {
+        return fmt.Errorf("failed to load SNMP plugin: %w", err)
+    }
 
 	pm.logger.Info("Builtin plugins loaded successfully")
 	return nil
@@ -378,6 +396,72 @@ func (pm *PluginManager) loadDbPlugin() error {
 
 	pm.logger.Infof("DB plugin loaded and started: %s v%s", dbPlugin.Name(), dbPlugin.Version())
 	return nil
+}
+
+// loadHTTPPlugin 加载HTTP插件
+func (pm *PluginManager) loadHTTPPlugin() error {
+    pm.logger.Info("Loading HTTP plugin...")
+
+    plug := httpplugin.New()
+    cfg := map[string]interface{}{
+        "max_idle_conns":         pm.config.HTTP.MaxIdleConns,
+        "max_idle_conns_per_host": pm.config.HTTP.MaxIdleConnsPerHost,
+        "idle_conn_timeout":      pm.config.HTTP.IdleConnTimeout,
+        "default_timeout":        pm.config.HTTP.DefaultTimeout,
+        "allowed_hosts":          pm.config.HTTP.AllowedHosts,
+        "blocked_hosts":          pm.config.HTTP.BlockedHosts,
+        "proxy": map[string]any{
+            "http_proxy":  pm.config.HTTP.Proxy.HTTPProxy,
+            "https_proxy": pm.config.HTTP.Proxy.HTTPSProxy,
+            "no_proxy":    pm.config.HTTP.Proxy.NoProxy,
+        },
+        "tls": map[string]any{
+            "insecure_skip_verify": pm.config.HTTP.TLS.InsecureSkipVerify,
+            "pinned_certs":         pm.config.HTTP.TLS.PinnedCerts,
+        },
+        "circuit_breaker": map[string]any{
+            "failure_limit": pm.config.HTTP.CircuitBreaker.FailureLimit,
+            "timeout":       pm.config.HTTP.CircuitBreaker.Timeout,
+        },
+        "parallelism": map[string]any{ "global": pm.config.HTTP.Parallelism.Global, "per_host": pm.config.HTTP.Parallelism.PerHost },
+        "retry": map[string]any{
+            "max":                    pm.config.HTTP.Retry.Max,
+            "base_delay":             pm.config.HTTP.Retry.BaseDelay,
+            "max_delay":              pm.config.HTTP.Retry.MaxDelay,
+            "retry_on_5xx":           pm.config.HTTP.Retry.RetryOn5xx,
+            "retry_on_network_error": pm.config.HTTP.Retry.RetryOnNetworkError,
+            "retry_on_codes":         pm.config.HTTP.Retry.RetryOnCodes,
+        },
+    }
+    if err := plug.Initialize(cfg); err != nil {
+        return fmt.Errorf("failed to initialize HTTP plugin: %w", err)
+    }
+    if err := plug.Start(); err != nil {
+        return fmt.Errorf("failed to start HTTP plugin: %w", err)
+    }
+    pm.plugins[plug.Name()] = plug
+    pm.logger.Infof("HTTP plugin loaded and started: %s v%s", plug.Name(), plug.Version())
+    return nil
+}
+
+func (pm *PluginManager) loadPortFwdPlugin() error {
+    pm.logger.Info("Loading PortForward plugin...")
+    plug := portfwd.New()
+    if err := plug.Initialize(map[string]any{}); err != nil { return err }
+    if err := plug.Start(); err != nil { return err }
+    pm.plugins[plug.Name()] = plug
+    pm.logger.Infof("PortForward plugin loaded and started: %s v%s", plug.Name(), plug.Version())
+    return nil
+}
+
+func (pm *PluginManager) loadSNMPPlugin() error {
+    pm.logger.Info("Loading SNMP plugin...")
+    plug := snmpplugin.New()
+    if err := plug.Initialize(map[string]any{}); err != nil { return err }
+    if err := plug.Start(); err != nil { return err }
+    pm.plugins[plug.Name()] = plug
+    pm.logger.Infof("SNMP plugin loaded and started: %s v%s", plug.Name(), plug.Version())
+    return nil
 }
 
 // UpdatePluginConfig 更新插件配置

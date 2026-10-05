@@ -1,0 +1,47 @@
+{
+  "info": {
+    "name": "Newbee Proxy - SNMP",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "SNMP GET v2c",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/api/snmp/get",
+        "body": { "mode": "raw", "raw": "{\n  \"version\": \"v2c\",\n  \"target\": \"127.0.0.1\",\n  \"port\": 161,\n  \"timeout_ms\": 2000,\n  \"retries\": 0,\n  \"creds\": { \"community\": \"public\" },\n  \"oids\": [\"1.3.6.1.2.1.1.1.0\"]\n}" }
+      }
+    },
+    {
+      "name": "SNMP WALK v2c",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/api/snmp/walk",
+        "body": { "mode": "raw", "raw": "{\n  \"version\": \"v2c\",\n  \"target\": \"127.0.0.1\",\n  \"port\": 161,\n  \"timeout_ms\": 2000,\n  \"retries\": 0,\n  \"creds\": { \"community\": \"public\" },\n  \"root_oid\": \"1.3.6.1.2.1.1\"\n}" }
+      }
+    },
+    {
+      "name": "SNMP GET v2c (use defaults)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/api/snmp/get",
+        "body": { "mode": "raw", "raw": "{\n  \"target\": \"127.0.0.1\",\n  \"oids\": [\"1.3.6.1.2.1.1.1.0\"]\n}" }
+      }
+    },
+    {
+      "name": "SNMP Ping",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "X-PSK", "value": "{{psk}}" } ],
+        "url": "{{baseUrl}}/api/snmp/ping?target=127.0.0.1&version=v2c&community=public"
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:9001" },
+    { "key": "psk", "value": "dev-psk" }
+  ]
+}

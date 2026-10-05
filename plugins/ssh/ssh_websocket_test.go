@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"newbee-agent/plugins/common"
+    "github.com/coder-lulu/newbee-proxy/plugins/common"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

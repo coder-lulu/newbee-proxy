@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"newbee-agent/internal/config"
+    "github.com/coder-lulu/newbee-proxy/internal/config"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

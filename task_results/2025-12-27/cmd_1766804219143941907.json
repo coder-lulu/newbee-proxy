@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1766804219143941907",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-12-27T10:56:59.145599292+08:00",
+  "end_time": "2025-12-27T10:56:59.544599671+08:00",
+  "execution_time_ms": 399,
+  "result_data": "{\"execution_time\":399,\"exit_code\":0,\"metadata\":{\"command\":\"pwd;whoami;echo $bar\",\"protocol\":\"ssh\",\"target\":\"192.168.26.130:22\"},\"stderr\":\"[sudo] password for test: /usr/bin/cd: line 2: cd: tmp: No such file or directory\\n\",\"stdout\":\"test\\n\\n\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1766804219",
+    "target": "192.168.26.130",
+    "username": "test"
+  }
+}

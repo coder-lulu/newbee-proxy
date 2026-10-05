@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	"encoding/json"
-	"fmt"
-	"time"
+    "encoding/json"
+    "fmt"
+    "time"
 
-	"newbee-agent/internal/svc"
-	"newbee-agent/internal/types"
-	pb "newbee-agent/proto/agent"
+    "github.com/coder-lulu/newbee-proxy/internal/svc"
+    "github.com/coder-lulu/newbee-proxy/internal/types"
+    pb "github.com/coder-lulu/newbee-proxy/internal/types"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

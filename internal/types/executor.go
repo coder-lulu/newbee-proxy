@@ -29,9 +29,16 @@ type CommandRequest struct {
 	Command      string            `json:"command"`       // 要执行的命令
 	WorkingDir   string            `json:"working_dir"`   // 工作目录
 	Timeout      int32             `json:"timeout"`       // 超时时间(秒)
-	UseSudo      bool              `json:"use_sudo"`      // 是否使用sudo
-	SudoPassword string            `json:"sudo_password"` // sudo密码
-	Environment  map[string]string `json:"environment"`   // 环境变量
+    UseSudo      bool              `json:"use_sudo"`          // 是否使用sudo
+    SudoPassword string            `json:"sudo_password"`     // sudo密码
+    // 使用 sudo -E 保留环境变量（需目标机 sudoers 允许），默认 false。
+    SudoPreserveEnv bool           `json:"sudo_preserve_env"`
+    // 需要 TTY 的 sudo 场景，可请求分配 PTY
+    RequestPty bool   `json:"request_pty"`
+    PtyTerm    string `json:"pty_term"` // 默认 xterm-256color
+    PtyRows    int    `json:"pty_rows"` // 默认 40
+    PtyCols    int    `json:"pty_cols"` // 默认 120
+    Environment  map[string]string `json:"environment"`   // 环境变量
 }
 
 // CommandResult 命令执行结果
@@ -61,9 +68,16 @@ type ScriptRequest struct {
 	ScriptType     string            `json:"script_type"`      // shell/bash/python/powershell等
 	WorkingDir     string            `json:"working_dir"`      // 工作目录
 	Timeout        int32             `json:"timeout"`          // 超时时间(秒)
-	UseSudo        bool              `json:"use_sudo"`         // 是否使用sudo
-	SudoPassword   string            `json:"sudo_password"`    // sudo密码
-	Environment    map[string]string `json:"environment"`      // 环境变量
+    UseSudo        bool              `json:"use_sudo"`           // 是否使用sudo
+    SudoPassword   string            `json:"sudo_password"`      // sudo密码
+    // 使用 sudo -E 保留环境变量（需目标机 sudoers 允许），默认 false。
+    SudoPreserveEnv bool             `json:"sudo_preserve_env"`
+    // 需要 TTY 的 sudo 场景，可请求分配 PTY
+    RequestPty bool   `json:"request_pty"`
+    PtyTerm    string `json:"pty_term"` // 默认 xterm-256color
+    PtyRows    int    `json:"pty_rows"` // 默认 40
+    PtyCols    int    `json:"pty_cols"` // 默认 120
+    Environment    map[string]string `json:"environment"`      // 环境变量
 	RemoteFileMode string            `json:"remote_file_mode"` // 文件权限，如"755"
 	RemoteFilePath string            `json:"remote_file_path"` // 指定远程脚本路径(可选)
 	CleanupAfter   bool              `json:"cleanup_after"`    // 执行后是否清理脚本文件

@@ -21,15 +21,12 @@ type TaskHandler interface {
 }
 ```
 
-### 2. OpsStreamClient (`internal/client/ops_stream_client.go`)
+### 2. OpsCenter HTTP/PSK（推荐）
 
-OPS流式客户端，负责与OPS服务的双向通信。
+已弃用 gRPC OpsRpc/OpsStreamClient，统一通过 OpsCenter HTTP/PSK 完成注册、心跳与任务结果上报：
 
-**主要功能：**
-- Agent注册与认证
-- 心跳维持
-- 任务接收与响应
-- 双向消息流
+- 注册与心跳：internal/svc/proxy_registration_manager.go 调用 internal/client/ops_center_client.go
+- 任务结果上报：EnhancedTaskExecutor 失败时落 Outbox，重放亦通过 OpsCenterClient.ReportTaskResult
 
 ### 3. FileTransferRequest (`internal/types/executor.go`)
 
@@ -41,10 +38,10 @@ OPS流式客户端，负责与OPS服务的双向通信。
 
 ```go
 import (
-    "newbee-agent/internal/client"
-    "newbee-agent/internal/config"
-    "newbee-agent/internal/handlers"
-    "newbee-agent/internal/svc"
+    "github.com/coder-lulu/newbee-proxy/internal/client"
+    "github.com/coder-lulu/newbee-proxy/internal/config"
+    "github.com/coder-lulu/newbee-proxy/internal/handlers"
+    "github.com/coder-lulu/newbee-proxy/internal/svc"
 )
 
 // 创建服务上下文
@@ -60,32 +57,21 @@ opsStreamClient := client.NewOpsStreamClient(&config, opsTaskHandler)
 err := opsStreamClient.Start()
 ```
 
-### 2. 配置设置
+### 3. 配置设置
 
-在 `etc/agent.yaml` 中确保OPS RPC配置正确：
+在 `etc/proxy.yaml` 中配置 OpsCenter 与 PSK，建议将 Security.SkipPaths 仅包含只读探活：
 
 ```yaml
-OpsRpc:
+OpsCenter:
   Enabled: true
-  Endpoints:
-    - "localhost:8081"
-    - "ops-server:8081"
-  Timeout: 5000
+  Endpoints: ["http://127.0.0.1:9601"]
+  HeartbeatSeconds: 30
+  WorkerID: "proxy-worker-001"
+  PSK: "dev-psk"
 
 Security:
-  EnableTLS: false
-  SkipVerify: true
-
-Agent:
-  ID: "agent-001"
-  Name: "demo-agent"
-  Version: "1.0.0"
-  Region: "default"
-  Capabilities:
-    - "ssh"
-    - "telnet"
-    - "rdp"
-    - "file_transfer"
+  JWT: { Enabled: false }
+  SkipPaths: ["/health", "/status", "/metrics"]
 ```
 
 ### 3. 任务类型示例

@@ -1,0 +1,528 @@
+{
+  "info": {
+    "_postman_id": "9a1d4c02-2f0a-4c2b-9fd2-7e0f5a0b1234",
+    "name": "Newbee Worker API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Newbee Worker HTTP/WS APIs. 导入后请同时导入 environment：Worker.postman_environment.json，并设置 baseUrl（如 http://localhost:8889）。本集合所有 url 均为字符串格式，避免旧版本 Postman 对 url.raw 的兼容问题。"
+  },
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}",
+                "disabled": true
+              },
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}",
+                "disabled": false
+              }
+            ],
+            "url": "{{baseUrl}}/health"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}",
+                "disabled": true
+              },
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}",
+                "disabled": false
+              }
+            ],
+            "url": "{{baseUrl}}/status"
+          },
+          "response": []
+        },
+        {
+          "name": "Plugins",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}",
+                "disabled": true
+              },
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}",
+                "disabled": false
+              }
+            ],
+            "url": "{{baseUrl}}/plugins"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Metrics & Observability",
+      "item": [
+        {
+          "name": "Prometheus /metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/metrics"
+          },
+          "response": []
+        },
+        {
+          "name": "Metrics JSON /metrics.json",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/metrics.json"
+          },
+          "response": []
+        },
+        {
+          "name": "pprof index (/debug/pprof/)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/debug/pprof/",
+            "description": "pprof index page (HTML). For CPU profile download use /debug/pprof/profile?seconds=30"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "Submit Command (HTTP)\nPOST /api/task/command",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}",
+                "disabled": true
+              },
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"task_id\": \"{{taskId}}\",\n  \"target\": \"{{sshHost}}\",\n  \"port\": {{sshPort}},\n  \"protocol\": \"ssh\",\n  \"username\": \"{{sshUser}}\",\n  \"password\": \"{{sshPass}}\",\n  \"command\": \"uname -a\",\n  \"timeout\": 30\n}"
+            },
+            "url": "{{baseUrl}}/api/task/command"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Script (HTTP)\nPOST /api/task/script",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}",
+                "disabled": true
+              },
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"task_id\": \"{{taskId}}\",\n  \"target\": \"{{sshHost}}\",\n  \"port\": {{sshPort}},\n  \"protocol\": \"ssh\",\n  \"username\": \"{{sshUser}}\",\n  \"password\": \"{{sshPass}}\",\n  \"script_content\": \"echo hello\",\n  \"script_type\": \"bash\",\n  \"timeout\": 30,\n  \"cleanup_after\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/task/script"
+          },
+          "response": []
+        },
+        {
+          "name": "File Transfer (HTTP)\nPOST /api/task/file",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}",
+                "disabled": true
+              },
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"task_id\": \"{{taskId}}\",\n  \"target\": \"{{sshHost}}\",\n  \"port\": {{sshPort}},\n  \"protocol\": \"ssh\",\n  \"username\": \"{{sshUser}}\",\n  \"password\": \"{{sshPass}}\",\n  \"source_path\": \"/etc/hosts\",\n  \"target_path\": \"/tmp/hosts.copy\",\n  \"direction\": \"download\",\n  \"timeout\": 60\n}"
+            },
+            "url": "{{baseUrl}}/api/task/file"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Task\nPOST /api/task/cancel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}",
+                "disabled": true
+              },
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"task_id\": \"{{taskId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/task/cancel"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Task Status\nGET /api/task/status/:taskId",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/task/status/{{taskId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Task Result\nGET /api/task/result/:taskId",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/task/result/{{taskId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "List Active Tasks\nGET /api/task/active",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/task/active"
+          },
+          "response": []
+        },
+        {
+          "name": "Task Stats\nGET /api/task/stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/task/stats"
+          },
+          "response": []
+        },
+        {
+          "name": "Stream: Enqueue Task (HTTP helper)\nPOST /api/stream/task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agent_id\": \"{{agentId}}\",\n  \"task\": {\n    \"task_id\": \"{{taskId}}\",\n    \"task_type\": \"SCRIPT_EXECUTE\",\n    \"target\": \"{{sshHost}}\",\n    \"target_port\": {{sshPort}},\n    \"timeout_seconds\": 30,\n    \"payload\": \"{\\\"task_id\\\":\\\"{{taskId}}\\\",\\\"target\\\":\\\"{{sshHost}}\\\",\\\"port\\\":{{sshPort}},\\\"protocol\\\":\\\"ssh\\\",\\\"username\\\":\\\"{{sshUser}}\\\",\\\"password\\\":\\\"{{sshPass}}\\\",\\\"script_content\\\":\\\"echo from stream\\\",\\\"script_type\\\":\\\"bash\\\",\\\"timeout\\\":30}\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/api/stream/task",
+            "description": "Helper to inject a task into the running gRPC stream for agent {{agentId}}."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Streams & WebSocket (Info)",
+      "item": [
+        {
+          "name": "SSH WebSocket (说明)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}"
+              }
+            ],
+            "url": "{{baseUrl}}/ws/ssh",
+            "description": "Postman 建议使用单独的 WebSocket 请求。此处仅为说明：在 Postman 中新建 WebSocket 请求，连接 ws://{{wsHost}}/ws/ssh，首帧发送 JSON：{\\n  \\\"target\\\": \\\"{{sshHost}}\\\", \\n  \\\"port\\\": {{sshPort}}, \\n  \\\"username\\\": \\\"{{sshUser}}\\\", \\n  \\\"password\\\": \\\"{{sshPass}}\\\", \\n  \\\"auth_type\\\": \\\"password\\\", \\n  \\\"cols\\\": 120, \\n  \\\"rows\\\": 36, \\n  \\\"session_id\\\": \\\"sid-1\\\"\\n}。Header 可带 X-PSK: {{psk}} 或 Authorization: Bearer {{bearerToken}}。"
+          }
+        },
+        {
+          "name": "Telnet WebSocket (说明)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}"
+              }
+            ],
+            "url": "{{baseUrl}}/ws/telnet",
+            "description": "Postman 新建 WebSocket 请求，连接 ws://{{wsHost}}/ws/telnet，首帧 JSON：{\\n  \\\"target\\\": \\\"{{telnetHost}}\\\", \\n  \\\"port\\\": {{telnetPort}}, \\n  \\\"username\\\": \\\"\\\", \\n  \\\"password\\\": \\\"pass\\\", \\n  \\\"cols\\\": 120, \\n  \\\"rows\\\": 36, \\n  \\\"session_id\\\": \\\"sid-1\\\"\\n}。"
+          }
+        },
+        {
+          "name": "RDP WebSocket (说明)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/rdp/websocket",
+            "description": "Postman 新建 WebSocket 请求，连接 ws://{{wsHost}}/api/rdp/websocket?hostname={{rdpHost}}&port={{rdpPort}}&username={{rdpUser}}&password={{rdpPass}}。依赖 guacd 可达。"
+          }
+        },
+        {
+          "name": "VNC WebSocket (说明)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/vnc/websocket",
+            "description": "Postman 新建 WebSocket 请求，连接 ws://{{wsHost}}/api/vnc/websocket?hostname={{vncHost}}&port={{vncPort}}&password={{vncPass}}。依赖 guacd 可达。"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Database (optional)",
+      "item": [
+        {
+          "name": "List Databases",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/db/databases"
+          }
+        },
+        {
+          "name": "List Tables",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/db/tables"
+          }
+        },
+        {
+          "name": "Table Info",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/db/table/info"
+          }
+        },
+        {
+          "name": "DB Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/db/stats"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin (state/reload)",
+      "description": "Planned admin endpoints. If implemented, they control online/draining/offline and hot-reload.",
+      "item": [
+        {
+          "name": "Get State (planned)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/state"
+          }
+        },
+        {
+          "name": "Set State (planned)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"state\": \"draining\"\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/state"
+          }
+        },
+        {
+          "name": "Reload Config (planned)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-PSK",
+                "value": "{{psk}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/reload"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8889"
+    },
+    {
+      "key": "wsHost",
+      "value": "localhost:8889"
+    },
+    {
+      "key": "bearerToken",
+      "value": ""
+    },
+    {
+      "key": "psk",
+      "value": "dev-psk"
+    },
+    {
+      "key": "agentId",
+      "value": "agent-001"
+    },
+    {
+      "key": "taskId",
+      "value": "t-1"
+    },
+    {
+      "key": "sshHost",
+      "value": "127.0.0.1"
+    },
+    {
+      "key": "sshPort",
+      "value": "22"
+    },
+    {
+      "key": "sshUser",
+      "value": "root"
+    },
+    {
+      "key": "sshPass",
+      "value": "pass"
+    },
+    {
+      "key": "telnetHost",
+      "value": "127.0.0.1"
+    },
+    {
+      "key": "telnetPort",
+      "value": "23"
+    },
+    {
+      "key": "rdpHost",
+      "value": "127.0.0.1"
+    },
+    {
+      "key": "rdpPort",
+      "value": "3389"
+    },
+    {
+      "key": "rdpUser",
+      "value": "Administrator"
+    },
+    {
+      "key": "rdpPass",
+      "value": "pass"
+    },
+    {
+      "key": "vncHost",
+      "value": "127.0.0.1"
+    },
+    {
+      "key": "vncPort",
+      "value": "5901"
+    },
+    {
+      "key": "vncPass",
+      "value": "vncpass"
+    }
+  ]
+}

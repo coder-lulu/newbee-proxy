@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"newbee-agent/internal/types"
+    "github.com/coder-lulu/newbee-proxy/internal/types"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

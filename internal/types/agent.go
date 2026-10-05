@@ -6,24 +6,10 @@ import (
 
 // AgentStatus Agent状态信息
 type AgentStatus struct {
-	ID              string            `json:"id"`
-	Status          string            `json:"status"`
-	Version         string            `json:"version"`
-	Capabilities    []string          `json:"capabilities"`
-	ConnectedToOPS  bool              `json:"connected_to_ops"`
-	ActiveSessions  int               `json:"active_sessions"`
-	LoadedPlugins   []string          `json:"loaded_plugins"`
-	Metadata        map[string]string `json:"metadata"`
-	StartTime       time.Time         `json:"start_time"`
-	Uptime          time.Duration     `json:"uptime"`
-	LastHeartbeat   time.Time         `json:"last_heartbeat"`
-	LastCommandTime time.Time         `json:"last_command_time"`
-	Region          string            `json:"region"`
-	NetworkSegments []string          `json:"network_segments"`
-	LocalIP         string            `json:"local_ip"`
-	PublicIP        string            `json:"public_ip"`
-	MemoryUsage     float64           `json:"memory_usage"`
-	CPUUsage        float64           `json:"cpu_usage"`
+    Status          string        `json:"status"`
+    ActiveSessions  int           `json:"active_sessions"`
+    StartTime       time.Time     `json:"start_time"`
+    Uptime          time.Duration `json:"uptime"`
 }
 
 // SessionInfo 会话信息
@@ -94,12 +80,13 @@ type MetricsData struct {
 type TaskType string
 
 const (
-	TaskTypeCommand      TaskType = "command"
-	TaskTypeFileTransfer TaskType = "file_transfer"
-	TaskTypeScript       TaskType = "script"
-	TaskTypeTunnel       TaskType = "tunnel"
-	TaskTypeProbe        TaskType = "probe"
-	TaskTypeHealthCheck  TaskType = "health_check"
+    TaskTypeCommand      TaskType = "command"
+    TaskTypeFileTransfer TaskType = "file_transfer"
+    TaskTypeScript       TaskType = "script"
+    TaskTypeHTTP         TaskType = "http_request"
+    TaskTypeTunnel       TaskType = "tunnel"
+    TaskTypeProbe        TaskType = "probe"
+    TaskTypeHealthCheck  TaskType = "health_check"
 )
 
 // TaskStatus 任务状态

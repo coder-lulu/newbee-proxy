@@ -117,11 +117,11 @@ cd agent
 go mod tidy
 
 # 配置文件
-cp etc/agent.yaml.example etc/agent.yaml
+cp etc/proxy.yaml.example etc/proxy.yaml
 # 编辑配置文件...
 
 # 启动服务
-go run ./cmd/agent -f etc/agent.yaml
+go run ./cmd/proxy -f etc/proxy.yaml
 ```
 
 ### 验证安装

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"newbee-agent/plugins/common"
+    "github.com/coder-lulu/newbee-proxy/plugins/common"
 	// 达梦数据库驱动 - 使用dm包
 	// _ "dm"
 )

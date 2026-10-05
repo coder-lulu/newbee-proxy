@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"newbee-agent/plugins/common"
+    "github.com/coder-lulu/newbee-proxy/plugins/common"
 	// _ "github.com/denisenkom/go-mssqldb" // 注释掉，避免编译错误
 )
 

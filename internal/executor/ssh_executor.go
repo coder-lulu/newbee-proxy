@@ -1,20 +1,21 @@
 package executor
 
 import (
-	"context"
-	"fmt"
-	"io"
-	"os"
-	"path"
-	"strconv"
-	"strings"
-	"time"
+    "bytes"
+    "context"
+    "fmt"
+    "io"
+    "os"
+    "path"
+    "strconv"
+    "strings"
+    "time"
 
-	"newbee-agent/internal/types"
+    "github.com/coder-lulu/newbee-proxy/internal/types"
 
-	"github.com/pkg/sftp"
-	"github.com/zeromicro/go-zero/core/logx"
-	"golang.org/x/crypto/ssh"
+    "github.com/pkg/sftp"
+    "github.com/zeromicro/go-zero/core/logx"
+    "golang.org/x/crypto/ssh"
 )
 
 // SSHExecutor SSH协议命令执行器
@@ -49,8 +50,9 @@ func (e *SSHExecutor) ExecuteCommand(ctx context.Context, req *types.CommandRequ
 		Metadata:  make(map[string]string),
 	}
 
-	e.logger.Infof("开始执行SSH命令 - TaskID: %s, Target: %s:%d, Command: %s",
-		req.TaskID, req.Target, req.Port, req.Command)
+    // 日志脱敏：不打印具体命令内容
+    e.logger.Infof("开始执行SSH命令 - TaskID: %s, Target: %s:%d",
+        req.TaskID, req.Target, req.Port)
 
 	// 设置超时
 	if req.Timeout > 0 {
@@ -74,9 +76,9 @@ func (e *SSHExecutor) ExecuteCommand(ctx context.Context, req *types.CommandRequ
 	}
 	defer client.Close()
 
-	// 创建SSH会话
-	session, err := client.NewSession()
-	if err != nil {
+    // 创建SSH会话
+    session, err := client.NewSession()
+    if err != nil {
 		result.Success = false
 		result.ErrorMessage = fmt.Sprintf("创建SSH会话失败: %v", err)
 		result.EndTime = time.Now()
@@ -84,22 +86,71 @@ func (e *SSHExecutor) ExecuteCommand(ctx context.Context, req *types.CommandRequ
 		e.logger.Errorf("创建SSH会话失败 - TaskID: %s, Error: %v", req.TaskID, err)
 		return result, err
 	}
-	defer session.Close()
+    defer session.Close()
 
-	// 设置环境变量
-	if req.Environment != nil {
-		for key, value := range req.Environment {
-			if err := session.Setenv(key, value); err != nil {
-				e.logger.Infof("设置环境变量失败 %s=%s: %v", key, value, err)
-			}
-		}
-	}
+    // 如果请求分配 PTY（解决 sudo requiretty），则申请 PTY
+    if req.RequestPty {
+        term := req.PtyTerm
+        if term == "" { term = "xterm-256color" }
+        rows := req.PtyRows; cols := req.PtyCols
+        if rows <= 0 { rows = 40 }
+        if cols <= 0 { cols = 120 }
+        // ssh.TerminalModes 可选：关闭回显、设置速度
+        modes := ssh.TerminalModes{
+            ssh.ECHO:          1,    // 1 开回显，0 关
+            ssh.TTY_OP_ISPEED: 14400,
+            ssh.TTY_OP_OSPEED: 14400,
+        }
+        if err := session.RequestPty(term, rows, cols, modes); err != nil {
+            // 不让失败中断执行，记录日志并继续无 PTY 模式
+            e.logger.Errorf("RequestPty 失败，退回无 TTY 模式: %v", err)
+        }
+    }
+
+    // 设置环境变量（优先 Setenv，失败将通过命令前缀 export 兜底）
+    var exportPrefix string
+    if req.Environment != nil {
+        var failed bool
+        for key, value := range req.Environment {
+            if err := session.Setenv(key, value); err != nil {
+                failed = true
+            }
+        }
+        if failed {
+            // 兜底：在命令前缀 export
+            var b strings.Builder
+            for k, v := range req.Environment {
+                // 简单转义单引号
+                v = strings.ReplaceAll(v, "'", "'\\''")
+                fmt.Fprintf(&b, "export %s='%s'; ", k, v)
+            }
+            exportPrefix = b.String()
+        }
+    }
 
 	// 构建完整命令
-	command := e.buildCommand(req)
+    command := e.buildCommand(req)
+    if exportPrefix != "" {
+        command = exportPrefix + command
+    }
+    // 标记 sudo 需求（用于 runCommand 内部探测与注入）
+    if req.UseSudo {
+        if req.SudoPreserveEnv {
+            command = "__NB_SUDO_E__ " + command
+        } else {
+            command = "__NB_SUDO__ " + command
+        }
+        if req.SudoPassword != "" {
+            // 将密码放入环境变量，供 runCommand 注入（避免明文出现在命令行）
+            // 这里无法直接设置远端环境变量；我们采用 exportPrefix 兜底方式已经处理命令环境。
+            // 对于 sudo 密码，使用本地进程环境传递（仅在当前 Run 期间），避免落盘。
+            os.Setenv("NB_SUDO_PWD", req.SudoPassword)
+            defer os.Unsetenv("NB_SUDO_PWD")
+        }
+    }
 
-	// 执行命令
-	stdout, stderr, exitCode, err := e.runCommand(ctx, session, command)
+    // 执行命令（带 sudo/探测选项）
+    stdout, stderr, exitCode, err := e.runCommand(ctx, session, command, req.UseSudo, req.SudoPreserveEnv, req.SudoPassword)
 
 	endTime := time.Now()
 	result.EndTime = endTime
@@ -188,31 +239,72 @@ func (e *SSHExecutor) ExecuteScript(ctx context.Context, req *types.ScriptReques
 		}
 	}()
 
-	// 创建SSH会话执行脚本
-	session, err := client.NewSession()
-	if err != nil {
+    // 创建SSH会话执行脚本
+    session, err := client.NewSession()
+    if err != nil {
 		result.Success = false
 		result.ErrorMessage = fmt.Sprintf("创建SSH会话失败: %v", err)
 		result.EndTime = time.Now()
 		result.ExecutionTime = result.EndTime.Sub(result.StartTime)
 		return result, err
 	}
-	defer session.Close()
+    defer session.Close()
 
-	// 设置环境变量
-	if req.Environment != nil {
-		for key, value := range req.Environment {
-			if err := session.Setenv(key, value); err != nil {
-				e.logger.Infof("设置环境变量失败 %s=%s: %v", key, value, err)
-			}
-		}
-	}
+    // 按需为脚本申请 PTY
+    if req.RequestPty {
+        term := req.PtyTerm
+        if term == "" { term = "xterm-256color" }
+        rows := req.PtyRows; cols := req.PtyCols
+        if rows <= 0 { rows = 40 }
+        if cols <= 0 { cols = 120 }
+        modes := ssh.TerminalModes{
+            ssh.ECHO:          1,
+            ssh.TTY_OP_ISPEED: 14400,
+            ssh.TTY_OP_OSPEED: 14400,
+        }
+        if err := session.RequestPty(term, rows, cols, modes); err != nil {
+            e.logger.Errorf("RequestPty 失败，退回无 TTY 模式: %v", err)
+        }
+    }
+
+    // 设置环境变量（脚本执行同样兜底 export）
+    var exportPrefix string
+    if req.Environment != nil {
+        var failed bool
+        for key, value := range req.Environment {
+            if err := session.Setenv(key, value); err != nil {
+                failed = true
+            }
+        }
+        if failed {
+            var b strings.Builder
+            for k, v := range req.Environment {
+                v = strings.ReplaceAll(v, "'", "'\\''")
+                fmt.Fprintf(&b, "export %s='%s'; ", k, v)
+            }
+            exportPrefix = b.String()
+        }
+    }
 
 	// 构建脚本执行命令
-	command := e.buildScriptCommand(req, remoteFilePath)
+    command := e.buildScriptCommand(req, remoteFilePath)
+    if exportPrefix != "" {
+        command = exportPrefix + command
+    }
+    if req.UseSudo {
+        if req.SudoPreserveEnv {
+            command = "__NB_SUDO_E__ " + command
+        } else {
+            command = "__NB_SUDO__ " + command
+        }
+        if req.SudoPassword != "" {
+            os.Setenv("NB_SUDO_PWD", req.SudoPassword)
+            defer os.Unsetenv("NB_SUDO_PWD")
+        }
+    }
 
-	// 执行脚本
-	stdout, stderr, exitCode, err := e.runCommand(ctx, session, command)
+    // 执行脚本（带 sudo/探测选项）
+    stdout, stderr, exitCode, err := e.runCommand(ctx, session, command, req.UseSudo, req.SudoPreserveEnv, req.SudoPassword)
 
 	endTime := time.Now()
 	result.EndTime = endTime
@@ -305,24 +397,16 @@ func (e *SSHExecutor) createSSHClientWithContext(ctx context.Context, host strin
 
 // buildCommand 构建完整的命令
 func (e *SSHExecutor) buildCommand(req *types.CommandRequest) string {
-	command := req.Command
+    command := req.Command
 
 	// 处理工作目录
 	if req.WorkingDir != "" {
 		command = fmt.Sprintf("cd %s && %s", req.WorkingDir, command)
 	}
 
-	// 处理sudo
-	if req.UseSudo {
-		if req.SudoPassword != "" {
-			// 使用echo传递sudo密码
-			command = fmt.Sprintf("echo '%s' | sudo -S %s", req.SudoPassword, command)
-		} else {
-			command = fmt.Sprintf("sudo %s", command)
-		}
-	}
-
-	return command
+    // 不在这里处理 sudo；由执行阶段根据 NOPASSWD 探测决定是否注入密码
+    
+    return command
 }
 
 // buildScriptCommand 构建脚本执行命令
@@ -354,21 +438,16 @@ func (e *SSHExecutor) buildScriptCommand(req *types.ScriptRequest, scriptPath st
 		command = fmt.Sprintf("cd %s && %s", req.WorkingDir, command)
 	}
 
-	// 处理sudo
-	if req.UseSudo {
-		if req.SudoPassword != "" {
-			command = fmt.Sprintf("echo '%s' | sudo -S %s", req.SudoPassword, command)
-		} else {
-			command = fmt.Sprintf("sudo %s", command)
-		}
-	}
+    // 不在这里处理 sudo；由执行阶段根据 NOPASSWD 探测决定是否注入密码
 
-	e.logger.Infof("脚本执行命令 - TaskID: %s, Command: %s", req.TaskID, command)
-	return command
+    // 降低泄露风险：不打印完整命令，仅打印元信息
+    // 日志脱敏：不打印脚本内容或完整命令
+    e.logger.Infof("脚本执行 - TaskID: %s, ScriptType: %s, WorkingDir: %s, UseSudo: %t", req.TaskID, req.ScriptType, req.WorkingDir, req.UseSudo)
+    return command
 }
 
 // runCommand 执行命令并返回结果
-func (e *SSHExecutor) runCommand(ctx context.Context, session *ssh.Session, command string) (stdout, stderr string, exitCode int, err error) {
+func (e *SSHExecutor) runCommand(ctx context.Context, session *ssh.Session, command string, needSudo bool, preserveEnv bool, sudoPassword string) (stdout, stderr string, exitCode int, err error) {
 	startTime := time.Now()
 
 	// 检查context超时设置
@@ -376,10 +455,11 @@ func (e *SSHExecutor) runCommand(ctx context.Context, session *ssh.Session, comm
 	if deadline, hasDeadline := ctx.Deadline(); hasDeadline {
 		timeout := time.Until(deadline)
 		timeoutInfo = fmt.Sprintf("超时: %v", timeout)
-		e.logger.Infof("SSH命令开始执行 - %s, 命令: %s", timeoutInfo, command)
+    // 不打印完整命令，避免敏感泄露
+    e.logger.Infof("SSH命令开始执行 - %s", timeoutInfo)
 	} else {
 		timeoutInfo = "无超时限制"
-		e.logger.Infof("SSH命令开始执行 - %s, 命令: %s", timeoutInfo, command)
+    e.logger.Infof("SSH命令开始执行 - %s", timeoutInfo)
 	}
 
 	// 创建输出缓冲区
@@ -387,11 +467,24 @@ func (e *SSHExecutor) runCommand(ctx context.Context, session *ssh.Session, comm
 	session.Stdout = &stdoutBuf
 	session.Stderr = &stderrBuf
 
-	// 在goroutine中执行命令
-	cmdErr := make(chan error, 1)
-	go func() {
-		cmdErr <- session.Run(command)
-	}()
+    // 构造一次性 shell 包装：先 sudo -n 尝试，再按需 -S 注入密码
+    cmdErr := make(chan error, 1)
+    go func() {
+        cmdToRun := command
+        if needSudo {
+            eflag := ""
+            if preserveEnv { eflag = "-E " }
+            esc := strings.ReplaceAll(command, "\"", "\\\"")
+            if sudoPassword != "" {
+                // 为 sudo -S 提供 stdin
+                session.Stdin = bytes.NewBufferString(sudoPassword + "\n")
+                cmdToRun = fmt.Sprintf("bash -lc \"sudo -n %sbash -lc \"%s\" || sudo -S -p '' %sbash -lc \"%s\"\"", eflag, esc, eflag, esc)
+            } else {
+                cmdToRun = fmt.Sprintf("bash -lc \"sudo -n %sbash -lc \"%s\"\"", eflag, esc)
+            }
+        }
+        cmdErr <- session.Run(cmdToRun)
+    }()
 
 	// 等待命令完成或超时
 	select {
@@ -404,14 +497,14 @@ func (e *SSHExecutor) runCommand(ctx context.Context, session *ssh.Session, comm
 		if err != nil {
 			if exitError, ok := err.(*ssh.ExitError); ok {
 				exitCode = exitError.ExitStatus()
-				e.logger.Infof("SSH命令执行完成 - 退出码: %d, 用时: %v", exitCode, duration)
+            e.logger.Infof("SSH命令执行完成 - 退出码: %d, 用时: %v", exitCode, duration)
 			} else {
 				exitCode = -1
-				e.logger.Errorf("SSH命令执行错误 - 错误: %v, 用时: %v", err, duration)
+            e.logger.Errorf("SSH命令执行错误 - 用时: %v", duration)
 			}
 		} else {
 			exitCode = 0
-			e.logger.Infof("SSH命令执行成功 - 退出码: %d, 用时: %v", exitCode, duration)
+        e.logger.Infof("SSH命令执行成功 - 退出码: %d, 用时: %v", exitCode, duration)
 		}
 
 		return stdout, stderr, exitCode, nil

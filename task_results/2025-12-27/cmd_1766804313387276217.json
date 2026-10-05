@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1766804313387276217",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_FAILED",
+  "start_time": "2025-12-27T10:58:33.388652418+08:00",
+  "end_time": "2025-12-27T10:58:48.389652824+08:00",
+  "execution_time_ms": 15001,
+  "result_data": "",
+  "error_message": "连接SSH服务器失败: dial tcp 12.168.26.130:22: i/o timeout",
+  "metadata": {
+    "command_id": "cmd_1766804313",
+    "target": "12.168.26.130",
+    "username": "test"
+  }
+}

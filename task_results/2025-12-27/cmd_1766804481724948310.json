@@ -1,0 +1,15 @@
+{
+  "task_id": "cmd_1766804481724948310",
+  "task_type": "COMMAND_EXECUTE",
+  "status": "TASK_COMPLETED",
+  "start_time": "2025-12-27T11:01:21.725861537+08:00",
+  "end_time": "2025-12-27T11:01:22.059861616+08:00",
+  "execution_time_ms": 334,
+  "result_data": "{\"execution_time\":334,\"exit_code\":0,\"metadata\":{\"command\":\"pwd;sudo whoami;echo $FOO\",\"protocol\":\"ssh\",\"target\":\"192.168.26.130:22\"},\"stderr\":\"[sudo] password for test: \",\"stdout\":\"/home/test\\nroot\\n\\n\"}",
+  "error_message": "",
+  "metadata": {
+    "command_id": "cmd_1766804481",
+    "target": "192.168.26.130",
+    "username": "test"
+  }
+}
